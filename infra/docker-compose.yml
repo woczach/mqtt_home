@@ -3,3 +3,4 @@ include:
   - elastic.yaml
   - ebusdocker/ebusd.yml
   - z2m/z2m.yml
+  - influx.yml
