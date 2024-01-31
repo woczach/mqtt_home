@@ -1,0 +1,31 @@
+info  2024-01-19 17:30:08: Logging to console and directory: '/app/data/log/2024-01-19.17-30-08' filename: log.txt
+info  2024-01-19 17:30:08: Starting Zigbee2MQTT version 1.33.2 (commit #9996c93)
+info  2024-01-19 17:30:08: Starting zigbee-herdsman (0.21.0)
+info  2024-01-19 17:30:09: zigbee-herdsman started (resumed)
+info  2024-01-19 17:30:09: Coordinator firmware version: '{"meta":{"maintrel":1,"majorrel":2,"minorrel":7,"product":1,"revision":20210708,"transportrev":2},"type":"zStack3x0"}'
+info  2024-01-19 17:30:09: Currently 6 devices are joined:
+info  2024-01-19 17:30:09: 0xa4c138cf99f80c86 (0xa4c138cf99f80c86): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+info  2024-01-19 17:30:09: 0xa4c138276e15a066 (0xa4c138276e15a066): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+info  2024-01-19 17:30:09: 0x94deb8fffe2e751a (0x94deb8fffe2e751a): GS361A-H04 - Siterwell Radiator valve with thermostat (EndDevice)
+info  2024-01-19 17:30:09: 0xa4c138b99a0c3ede (0xa4c138b99a0c3ede): Not supported (EndDevice)
+info  2024-01-19 17:30:09: 0xa4c13818b181eda9 (0xa4c13818b181eda9): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+info  2024-01-19 17:30:09: 0xa4c138ad1d132790 (0xa4c138ad1d132790): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+warn  2024-01-19 17:30:09: `permit_join` set to  `true` in configuration.yaml.
+warn  2024-01-19 17:30:09: Allowing new devices to join.
+warn  2024-01-19 17:30:09: Set `permit_join` to `false` once you joined all devices.
+info  2024-01-19 17:30:09: Zigbee: allowing new devices to join.
+info  2024-01-19 17:30:09: Connecting to MQTT server at mqtt://localhost
+error 2024-01-19 17:30:10: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:10: MQTT failed to connect, exiting...
+info  2024-01-19 17:30:10: Stopping zigbee-herdsman...
+error 2024-01-19 17:30:11: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:12: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:13: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:14: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:15: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:16: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:17: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:18: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:19: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+error 2024-01-19 17:30:20: MQTT error: connect ECONNREFUSED 127.0.0.1:1883
+info  2024-01-19 17:30:20: Stopped zigbee-herdsman
