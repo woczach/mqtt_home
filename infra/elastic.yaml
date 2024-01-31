@@ -1,0 +1,14 @@
+version: '1.0'
+
+#version: "3.9"
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12
+    restart: always
+    environment:
+     - discovery.type=single-node
+     # ELASTIC_PASSWORD=changeme
+     # POSTGRES_PASSWORD: sonme # The PostgreSQL password (useful to connect to the database)
+     # POSTGRES_DB: smartkyc
+    ports:
+      - '9200:9200'
