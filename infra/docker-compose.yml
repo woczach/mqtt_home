@@ -4,3 +4,7 @@ include:
   - ebusdocker/ebusd.yml
   - z2m/z2m.yml
   - influx.yml
+  - filebeat.yml
+  - rabbit.yml
+  - ubuntu.yml
+  - minidlna.yml

@@ -1,0 +1,20 @@
+version: '1.0'
+
+#version: "3.9"
+services:
+  minidlna:
+    image: geekduck/minidlna
+    #container_name: grafana
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      -  /home/p/DYSK/home/samba/DYSK/fold/Muzyka:/opt/Music
+      -  /home/p/DYSK/home/samba/DYSK/fold/Obrazy:/opt/Pictures
+      -  /home/p/DYSK/home/samba/DYSK/fold/film:/opt/Videos
+    ports:
+      - '1900:1900'
+      - '8200:8200'
+      - '3563:3563'
+    expose:
+      - 1900
+      - 8200

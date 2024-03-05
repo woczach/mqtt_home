@@ -1,0 +1,15 @@
+version: '1.0'
+
+#version: "3.9"
+services:
+  rabbit:
+    image: rabbitmq:3-management
+    #container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '15672:15672'
+#x      - '5672:5672'
+#      - '1883:1883' 
+# remember docker exec -t 4ac85b24e685 rabbitmq-plugins enable rabbitmq_mqtt
+    expose:
+      - 15672

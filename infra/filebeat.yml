@@ -1,0 +1,8 @@
+version: '1.0'
+
+#version: "3.9"
+services:
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.12.0
+    restart: always
+#    command: bash -c 'setup -E output.elasticsearch.hosts=["elasticsearch:9200"]'

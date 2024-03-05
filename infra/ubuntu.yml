@@ -1,0 +1,9 @@
+version: '1.0'
+
+#version: "3.9"
+services:
+  manage:
+    image: ubuntu
+    restart: unless-stopped
+    #command: "/bin/bash"
+    command: ["sleep","infinity"]
