@@ -46,7 +46,7 @@ def push_to_db_array(db, bodies):
         client.close()
 
 broker = '192.168.0.30'
-port = 1883
+port = 11883
 topic = ["zigbee2mqtt/+", "ebusd/bai/+", 'tele/tasmota_B80F1C/SENSOR']
 # Generate a Client ID with the subscribe prefix.
 client_id = f'subscribe-{random.randint(0, 100)}'
