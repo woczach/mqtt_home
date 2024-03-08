@@ -8,9 +8,10 @@ services:
     restart: unless-stopped
     ports:
       - '15672:15672'
-#x      - '5672:5672'
+      - '5672:5672'
       - '11883:1883' 
 # remember docker exec -t 4ac85b24e685 rabbitmq-plugins enable rabbitmq_mqtt
     expose:
       - 15672
       - 11883
+      - 5672
