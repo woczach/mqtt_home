@@ -4,12 +4,22 @@ import os
 import time
 import pika
 import json 
-
+import threading
 
 broker = '192.168.0.30'
 port = 11883
 topic = "ebusd/bai/FlowTemp/get"
 client_id = f'publish-{random.randint(0, 100)}'
+
+
+
+TEMPJOZEF = 22
+TEMPPOKOJ = 21
+WODA = 40
+WODAOFF= 0
+NOC = "Y"
+message_to_piec = '0;40;40;-;-;0;0;0;-;0;0;0'
+
 
 
 def connect_mqtt() -> mqtt_client:
@@ -67,12 +77,43 @@ def init():
 
 
 
+
+
+
+def get_values():
+    global TEMPJOZEF
+    global TEMPPOKOJ
+    global WODAOFF
+    global NOC   
+    global WODA
+    if os.environ.get('TEMPJOZEF'):
+        TEMPJOZEF = os.environ.get('TEMPJOZEF')
+        print(TEMPJOZEF)
+    if os.environ.get('TEMPPOKOJ'):
+        TEMPPOKOJ = os.environ.get('TEMPPOKOJ')
+        print(TEMPPOKOJ)
+    if os.environ.get('WODAOFF'):
+        WODAOFF = os.environ.get('WODAOFF')
+        print(WODAOFF)
+    if os.environ.get('NOC'):
+        NOC = os.environ.get('NOC')
+        print(NOC)
+    if os.environ.get('WODA'):
+        WODA = os.environ.get('WODA')
+        print(WODA)
+
+
 def regulate(temp, key):
     #TEMPJOZEF = os.environ.get('TEMPJOZEF')
     #TEMPPOKOJ = os.environ.get('TEMPPOKOJ')
+    global TEMPJOZEF
+    global TEMPPOKOJ
+    global WODAOFF
+    global WODA
+    global NOC
+    global message_to_piec
 
-
-    topic_piec = 'ebusd/BAI/SetModeOverride/set'
+    
     TEMPJOZEF = 22
     TEMPPOKOJ = 21
     WODA = 40
@@ -105,10 +146,13 @@ def regulate(temp, key):
             if (worktemp - temp) > k:
                 settemp = v
 
-    msg = f'0;{settemp};{WODA};-;-;{PIECOFF};0;{WODAOFF};-;0;0;0'   
-    run(topic_piec, msg)
+    message_to_piec = f'0;{settemp};{WODA};-;-;{PIECOFF};0;{WODAOFF};-;0;0;0'   
+    
 
-            
+def send_topiec():
+    global message_to_piec 
+    topic_piec = 'ebusd/BAI/SetModeOverride/set'
+    run(topic_piec, message_to_piec)        
 
 
 def sub():
