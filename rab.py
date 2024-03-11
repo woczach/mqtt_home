@@ -12,9 +12,9 @@ def main():
 
     def callback(ch, method, properties, body):
         print(f"-> Received {body}")
-        print(f"-> prop {properties}")
+        #print(f"-> prop {properties}")
         print(f"-> ch {ch}")
-        print(f"->  met {method}")
+        print(f"->  met {method.routing_key}")
         print()
 
     channel.basic_consume(queue='all', on_message_callback=callback, auto_ack=True)
