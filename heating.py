@@ -5,6 +5,7 @@ import time
 import pika
 import json 
 import threading
+import configparser
 
 broker = '192.168.0.30'
 port = 11883
@@ -87,22 +88,20 @@ def get_values():
         global WODAOFF
         global NOC   
         global WODA
-        if os.environ.get('TEMPJOZEF'):
-            TEMPJOZEF = os.environ.get('TEMPJOZEF')
-            print(TEMPJOZEF)
-        if os.environ.get('TEMPPOKOJ'):
-            TEMPPOKOJ = os.environ.get('TEMPPOKOJ')
-            print(TEMPPOKOJ)
-        if os.environ.get('WODAOFF'):
-            WODAOFF = os.environ.get('WODAOFF')
-            print(WODAOFF)
-        if os.environ.get('NOC'):
-            NOC = os.environ.get('NOC')
-            print(NOC)
-        if os.environ.get('WODA'):
-            WODA = os.environ.get('WODA')
-            print(WODA)
-        time.sleep(60)
+        config = configparser.ConfigParser()
+        config.read('config.cfg')
+        TEMPJOZEF = float(config['Common']['TEMPJOZEF'])
+        TEMPPOKOJ =  float(config['Common']['TEMPPOKOJ'])
+        WODAOFF = int(config['Common']['WODAOFF'])
+        NOC = config['Common']['NOC']
+        WODA = int(config['Common']['WODA'])
+        print(TEMPJOZEF)
+        print(TEMPPOKOJ)
+        print(WODAOFF)
+        print(NOC)
+        print(WODA)        
+        time.sleep(10)
+
 
 
 def regulate(temp, key):
@@ -115,12 +114,6 @@ def regulate(temp, key):
     global NOC
     global message_to_piec
 
-    
-    TEMPJOZEF = 22
-    TEMPPOKOJ = 21
-    WODA = 40
-    WODAOFF=0
-    NOC = os.environ.get('NOC')
     settemp = 40
     #podiff = {2: 60, 1: 50, 0.2: 40}
     #jodiff = {2: 50, 1: 45, 0.5: 40}
