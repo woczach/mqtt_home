@@ -81,26 +81,28 @@ def init():
 
 
 def get_values():
-    global TEMPJOZEF
-    global TEMPPOKOJ
-    global WODAOFF
-    global NOC   
-    global WODA
-    if os.environ.get('TEMPJOZEF'):
-        TEMPJOZEF = os.environ.get('TEMPJOZEF')
-        print(TEMPJOZEF)
-    if os.environ.get('TEMPPOKOJ'):
-        TEMPPOKOJ = os.environ.get('TEMPPOKOJ')
-        print(TEMPPOKOJ)
-    if os.environ.get('WODAOFF'):
-        WODAOFF = os.environ.get('WODAOFF')
-        print(WODAOFF)
-    if os.environ.get('NOC'):
-        NOC = os.environ.get('NOC')
-        print(NOC)
-    if os.environ.get('WODA'):
-        WODA = os.environ.get('WODA')
-        print(WODA)
+    while 1:
+        global TEMPJOZEF
+        global TEMPPOKOJ
+        global WODAOFF
+        global NOC   
+        global WODA
+        if os.environ.get('TEMPJOZEF'):
+            TEMPJOZEF = os.environ.get('TEMPJOZEF')
+            print(TEMPJOZEF)
+        if os.environ.get('TEMPPOKOJ'):
+            TEMPPOKOJ = os.environ.get('TEMPPOKOJ')
+            print(TEMPPOKOJ)
+        if os.environ.get('WODAOFF'):
+            WODAOFF = os.environ.get('WODAOFF')
+            print(WODAOFF)
+        if os.environ.get('NOC'):
+            NOC = os.environ.get('NOC')
+            print(NOC)
+        if os.environ.get('WODA'):
+            WODA = os.environ.get('WODA')
+            print(WODA)
+        time.sleep(60)
 
 
 def regulate(temp, key):
@@ -150,9 +152,11 @@ def regulate(temp, key):
     
 
 def send_topiec():
-    global message_to_piec 
-    topic_piec = 'ebusd/BAI/SetModeOverride/set'
-    run(topic_piec, message_to_piec)        
+    while 1:
+        global message_to_piec 
+        topic_piec = 'ebusd/BAI/SetModeOverride/set'
+        run(topic_piec, message_to_piec)        
+        time.sleep(60)
 
 
 def sub():
@@ -182,4 +186,12 @@ def sub():
     channel.start_consuming()
 
 
-sub()
+
+
+t1 = threading.Thread(target=sub)
+t2 = threading.Thread(target=get_values)
+t3 = threading.Thread(target=send_topiec)
+
+t1.start()
+t2.start()
+t3.start()
