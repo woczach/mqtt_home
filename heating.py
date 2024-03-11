@@ -12,16 +12,12 @@ port = 11883
 topic = "ebusd/bai/FlowTemp/get"
 client_id = f'publish-{random.randint(0, 100)}'
 
-
-
 TEMPJOZEF = 22
 TEMPPOKOJ = 21
 WODA = 40
 WODAOFF= 0
 NOC = "Y"
 message_to_piec = '0;40;40;-;-;0;0;0;-;0;0;0'
-
-
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -36,7 +32,6 @@ def connect_mqtt() -> mqtt_client:
     client.connect(broker, port)
     return client
 
-
 def publish(client, topic, message):
 
     result = client.publish(topic, message)
@@ -47,15 +42,11 @@ def publish(client, topic, message):
     else:
         print(f"Failed to send message to topic {topic}")
 
-
-
-
 def run(topic, message):
     client = connect_mqtt()
     client.loop_start()
     publish(client, topic, message)
     client.loop_stop()
-
 
 
 def init():
@@ -74,12 +65,6 @@ def init():
         ]
     for topic in topics:
         run(topic, "'?3'")
-
-
-
-
-
-
 
 def get_values():
     while 1:
@@ -166,20 +151,10 @@ def sub():
         if method.routing_key == "rpi.temp":
             regulate(json.loads(body.decode('utf-8')), "po")
 
-        
-        #print(f"-> Received {body}")
-        #print(f"-> prop {properties}")
-        #print(f"-> ch {ch}")
-        #print(f"->  met {method.routing_key}")
-        #print()
-
     channel.basic_consume(queue='all', on_message_callback=callback, auto_ack=True)
 
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
-
-
-
 
 t1 = threading.Thread(target=sub)
 t2 = threading.Thread(target=get_values)
