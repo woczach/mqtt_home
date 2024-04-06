@@ -5,7 +5,7 @@ services:
     container_name: ebusd
     restart: unless-stopped
     volumes:
-      - /root/ebusdocker/ebusd-configuration/ebusd-2.1.x/en:/ebusd
+      - /root/mqtt_home/infra/ebusdocker/ebusd-configuration/ebusd-2.1.x/en:/ebusd
     ports:
       - 8888:8888
       # when enabling the HTTP port, add it to the published ports as well:
