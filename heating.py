@@ -156,6 +156,8 @@ def sub():
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
 
+init()
+
 t1 = threading.Thread(target=sub)
 t2 = threading.Thread(target=get_values)
 t3 = threading.Thread(target=send_topiec)
