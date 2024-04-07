@@ -7,7 +7,7 @@ import json
 import threading
 import configparser
 
-broker = '192.168.0.30'
+broker = '192.168.0.230'
 port = 11883
 topic = "ebusd/bai/FlowTemp/get"
 client_id = f'publish-{random.randint(0, 100)}'
@@ -138,7 +138,7 @@ def send_topiec():
 
 
 def sub():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='192.168.0.30'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='192.168.0.230'))
     channel = connection.channel()
 
 #    channel.queue_declare(queue='all')
