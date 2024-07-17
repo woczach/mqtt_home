@@ -45,7 +45,7 @@ def push_to_db_array(db, bodies):
                 logging.warning("Failed to write data.")
         client.close()
 
-broker = '192.168.0.30'
+broker = '192.168.0.230'
 port = 11883
 topic = ["zigbee2mqtt/+", "ebusd/bai/+", 'tele/tasmota_B80F1C/SENSOR']
 # Generate a Client ID with the subscribe prefix.
