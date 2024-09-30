@@ -144,7 +144,8 @@ def sub():
 #    channel.queue_declare(queue='all')
 
     def callback(ch, method, properties, body):
-
+        print(f"callback method {method}")
+        print(f"body {body.decode('utf-8')}")
             
         if method.routing_key == "tele.tasmota_B80F1C.SENSOR":
             regulate(json.loads(body.decode('utf-8'))['DS18B20']['Temperature'] , "jo")
