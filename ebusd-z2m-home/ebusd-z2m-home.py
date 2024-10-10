@@ -26,7 +26,8 @@ topics = {
     "WaterPressure": 'floatColon',   # 0.956;ok
     "ReturnTemp": 'floatColon'      #  43.81;64834;ok   
 }
-
+# body {"Time":"2024-10-10T10:03:32","DS18B20":{"Id":"0313949744B2","Temperature":20.6},"TempUnit":"C"}
+# body 21.75
 # topics = [ "FlowTempDesired",  # 40.00
 #             "HwcTempDesired", #  42.00
 #             "FlowTemp", #  44.62;ok  
