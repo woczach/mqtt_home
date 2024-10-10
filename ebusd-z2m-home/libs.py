@@ -1,5 +1,5 @@
 from paho.mqtt import client as mqtt_client
-
+from influxdb import InfluxDBClient
 
 def connect_mqtt(client_id, broker, port) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -27,3 +27,17 @@ def publish(client, topic, message):
         print(f"Send `{message}` to topic `{topic}`")
     else:
         print(f"Failed to send message to topic {topic}")
+
+
+def push_to_db(db, json_body, connection):
+    #connection = {'URL': 1.1.1.1, 'PORT': 8086, "DBUUSER": "username", DBPASS: 'password}
+
+    client = InfluxDBClient(host=connection['URL'], port=connection['port'], 
+                            database=db, username=connection['DBUSER'], password=connection['DBPASS'],
+                            ssl=False, verify_ssl=False)
+    response = client.write_points(json_body)
+    #write_api = client.write_api(write_options=SYNCHRONOUS)
+    #response = write_api.write("heat", "home", json_body)
+    if not response:
+        print("Failed to write data.")
+    client.close()
