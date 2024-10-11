@@ -1,6 +1,6 @@
 
 import random
-from libs import connect_mqtt, publish, push_to_db
+from libs import connect_mqtt, publish, measurments_preparation_sent
 import pika
 from time import sleep
 import threading
@@ -61,23 +61,7 @@ def check_boiler_messages():
         sleep(1)       
 
 
-def boiler_to_influx(topic, type, body):
-    
-    print(topic, type, body)
-    match type:
-        case 'float':
-            value = float(body.decode())
-        case 'floatColon':
-            value = float(body.decode().split(';')[0])
-        case 'int':
-            value = body.decode()
-        case 'onoff':
-            if body.decode() == 'on':
-                value = 1
-            else:
-                value = 0
-    #push_to_db('heat')            
-    print(f'{topic} value = {value}')
+
 
 def subscribe_boiler_messages():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='192.168.0.230'))
@@ -94,7 +78,7 @@ def subscribe_boiler_messages():
                 print(f'INFO {topic} found within {timers[topic]} clearing' )
                 timers[topic] = 0
                 if 'get' not in method.routing_key:
-                    boiler_to_influx(topic, type, body)
+                    measurments_preparation_sent(topic, type, body)
 
     channel_bai.basic_consume(queue='ebus', on_message_callback=callback, auto_ack=True)
 

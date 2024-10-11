@@ -32,7 +32,7 @@ def publish(client, topic, message):
 def push_to_db(db, json_body, connection):
     #connection = {'URL': 1.1.1.1, 'PORT': 8086, "DBUUSER": "username", DBPASS: 'password}
 
-    client = InfluxDBClient(host=connection['URL'], port=connection['port'], 
+    client = InfluxDBClient(host=connection['URL'], port=connection['PORT'], 
                             database=db, username=connection['DBUSER'], password=connection['DBPASS'],
                             ssl=False, verify_ssl=False)
     response = client.write_points(json_body)
@@ -41,3 +41,24 @@ def push_to_db(db, json_body, connection):
     if not response:
         print("Failed to write data.")
     client.close()
+
+
+def measurments_preparation_sent(topic, type, body):
+    
+    print(topic, type, body)
+    match type:
+        case 'float':
+            value = float(body.decode())
+        case 'floatColon':
+            value = float(body.decode().split(';')[0])
+        case 'int':
+            value = body.decode()
+        case 'onoff':
+            if body.decode() == 'on':
+                value = 1
+            else:
+                value = 0
+    data = [{"measurement": topic, "fields": {'value': value}}]
+    connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}            
+    push_to_db('heat', data, connection)            
+    print(f'{topic} value = {value}')    
