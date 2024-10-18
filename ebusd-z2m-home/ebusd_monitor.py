@@ -46,6 +46,15 @@ timers = {}
 
 
 def check_boiler_messages():
+    def init(topics_to_init):
+
+        client = connect_mqtt(client_id, broker, port)
+        client.loop_start()    
+        for topic in topics_to_init:
+            full_topic = f'ebusd/bai/{topic}/get'
+            publish(client, full_topic, "?3")
+        client.loop_stop()       
+        
     global timers
     for topic in topics:
         timers[topic] = 0
@@ -85,14 +94,7 @@ def subscribe_boiler_messages():
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel_bai.start_consuming()
 
-def init(topics_to_init):
 
-    client = connect_mqtt(client_id, broker, port)
-    client.loop_start()    
-    for topic in topics_to_init:
-        full_topic = f'ebusd/bai/{topic}/get'
-        publish(client, full_topic, "?3")
-    client.loop_stop()   
 
 
 
