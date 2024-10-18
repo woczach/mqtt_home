@@ -117,9 +117,9 @@ def read_from_db(db, measurment, connection):
     client = InfluxDBClient(host=connection['URL'], port=connection['PORT'], 
                             database=db, username=connection['DBUSER'], password=connection['DBPASS'],
                             ssl=False, verify_ssl=False)
-    query = f'SELECT * FROM "{measurment}" ORDER BY time DESC LIMIT 1'
+    query = f'SELECT * FROM "{measurment}" ORDER BY time DESC LIMIT 5'
     result = client.query(query)
-
+    print(result)
     return result
 
 
