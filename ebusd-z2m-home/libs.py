@@ -35,7 +35,7 @@ def publish(client, topic, message):
 
 def return_current_settings():
     current_time = datetime.now().time()
-    data = read_from_db('heat', 'time_measurement', connection)
+    data = read_from_db('heat', 'time_measurement', connection, 1)
     points = list(data.get_points())
     data_point = points[0]
 
@@ -57,7 +57,7 @@ def return_current_settings():
             'Kuchnia': data_point.get('KuchniaMorningHour'),
             'Salon': data_point.get('SalonMorningHour'),
             'Sypialnia': data_point.get('SalonMorningHour')
-        }
+        }, 'Morning'
     # Day (12:00 - 17:59)
     elif is_time_in_range(day_start, evening_start):
         return {
@@ -65,7 +65,7 @@ def return_current_settings():
             'Kuchnia': data_point.get('KuchniaDayHour'),
             'Salon': data_point.get('SalonDayHour'),
             'Sypialnia': data_point.get('SalonDayHour')
-        }
+        }, 'Day'
     # Evening (18:00 - 21:59)
     elif is_time_in_range(evening_start, night_start):
         return {
@@ -73,7 +73,7 @@ def return_current_settings():
             'Kuchnia': data_point.get('KuchniaEveningHour'),
             'Salon': data_point.get('SalonEveningHour'),
             'Sypialnia': data_point.get('SalonEveningHour')
-        }
+        }, 'Evening'
     # Night (22:00 - 04:59)
     elif is_time_in_range(night_start, morning_start):
         return {
@@ -81,7 +81,7 @@ def return_current_settings():
             'Kuchnia': data_point.get('KuchniaNightHour'),
             'Salon': data_point.get('SalonNightHour'),
             'Sypialnia': data_point.get('SalonNightHour')
-        }
+        }, 'Night'
     else:
         print("ERROR wrong time")
         return 'ERROR'
@@ -96,28 +96,27 @@ def return_current_temps():
     }  
     current_temperatures = {}  
     for k,v in rooms.items():
-        data = read_from_db('heat', v['measurment'], connection)
+        data = read_from_db('heat', v['measurment'], connection, 5)
         points = list(data.get_points())
-        data_point = points[0]
+        current_temperatures[k] = []
+        for data_point in points:
         
-        influx_time = datetime.fromisoformat(data_point.get('time').replace("Z", "+00:00"))
-        time_difference = current_time - influx_time
-        if time_difference > timedelta(minutes=5):
-            curent = 1
-        else:
-            curent = 0
-        current_temperatures[k] = {'value': data_point.get(v['value_name']), 'valid': curent }    
+            influx_time = datetime.fromisoformat(data_point.get('time').replace("Z", "+00:00"))
+            time_difference = current_time - influx_time
+            
+
+            current_temperatures[k].append({'value': data_point.get(v['value_name']), 'time_difference': time_difference.seconds }    )
         
 
     return current_temperatures   
         
 
 
-def read_from_db(db, measurment, connection):
+def read_from_db(db, measurment, connection, limit):
     client = InfluxDBClient(host=connection['URL'], port=connection['PORT'], 
                             database=db, username=connection['DBUSER'], password=connection['DBPASS'],
                             ssl=False, verify_ssl=False)
-    query = f'SELECT * FROM "{measurment}" ORDER BY time DESC LIMIT 5'
+    query = f'SELECT * FROM "{measurment}" ORDER BY time DESC LIMIT {limit}'
     result = client.query(query)
     print(result)
     return result
