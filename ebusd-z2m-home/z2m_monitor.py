@@ -41,7 +41,7 @@ def calculate_settings(temp_diff):
     settemp = 40
 
     print(temp_diff)
-    close_valve = [k for k, v in temp_diff.items() if v >= 0]
+    close_valve = [k for k, v in temp_diff.items() if v >= 1]
     open_valve = [k  for k, v in topics_z2m.items() if k not in close_valve]
     smallest_key = min(temp_diff, key=temp_diff.get)
     smallest_value = temp_diff[smallest_key]

@@ -56,7 +56,7 @@ def return_current_settings():
             'Jozef': data_point.get('JozefMorningHour'),
             'Kuchnia': data_point.get('KuchniaMorningHour'),
             'Salon': data_point.get('SalonMorningHour'),
-            'Sypialnia': data_point.get('SalonMorningHour')
+            'Sypialnia': data_point.get('SypialniaMorningHour')
         }, 'Morning'
     # Day (12:00 - 17:59)
     elif is_time_in_range(day_start, evening_start):
@@ -64,7 +64,7 @@ def return_current_settings():
             'Jozef': data_point.get('JozefDayHour'),
             'Kuchnia': data_point.get('KuchniaDayHour'),
             'Salon': data_point.get('SalonDayHour'),
-            'Sypialnia': data_point.get('SalonDayHour')
+            'Sypialnia': data_point.get('SypialniaDayHour')
         }, 'Day'
     # Evening (18:00 - 21:59)
     elif is_time_in_range(evening_start, night_start):
@@ -72,7 +72,7 @@ def return_current_settings():
             'Jozef': data_point.get('JozefEveningHour'),
             'Kuchnia': data_point.get('KuchniaEveningHour'),
             'Salon': data_point.get('SalonEveningHour'),
-            'Sypialnia': data_point.get('SalonEveningHour')
+            'Sypialnia': data_point.get('SypialniaEveningHour')
         }, 'Evening'
     # Night (22:00 - 04:59)
     elif is_time_in_range(night_start, morning_start):
@@ -80,7 +80,7 @@ def return_current_settings():
             'Jozef': data_point.get('JozefNightHour'),
             'Kuchnia': data_point.get('KuchniaNightHour'),
             'Salon': data_point.get('SalonNightHour'),
-            'Sypialnia': data_point.get('SalonNightHour')
+            'Sypialnia': data_point.get('SypialniaNightHour')
         }, 'Night'
     else:
         print("ERROR wrong time")
