@@ -1,0 +1,148 @@
+{% macro increment(dct, key, inc=1)%}
+    {% if dct.update({key: dct[key] + inc}) %} {% endif %}
+{% endmacro %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Table</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #dddddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .editable {
+            font-size: 16px;
+            color: #333;
+            padding: 10px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #e9ecef;
+            transition: background-color 0.3s;
+        }
+
+        .editable:hover {
+            background-color: #ced4da;
+        }
+
+        .submit-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+
+    <script>
+        function makeEditable(id) {
+            const para = document.getElementById(id);
+            const originalText = para.textContent;
+
+            // Create an input field with the current text
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalText;
+            input.className = 'editable';
+            input.style.width = '30%';
+            
+            // Replace paragraph content with input field
+            para.replaceWith(input);
+            input.focus();
+
+            // Create a save button
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.className = 'submit-btn';
+             console.log("creating button:")
+          
+
+            // Add event to save the updated text
+            saveBtn.onclick = function() {
+                const formData = new FormData();
+                const roomtemp = para.id;
+                console.log(" button: function")
+                para.textContent = input.value; // Set new text
+                input.replaceWith(para.id); // Replace input with paragraph
+                formData.append("NewTemp", input.value);
+                formData.append("RoomTime", roomtemp);
+                fetch("/post", {
+                    method: "POST",
+                    body: formData
+                    })               
+                saveBtn.remove(); // Remove save button
+            };
+
+            // Insert the save button after the input field
+            input.insertAdjacentElement('afterend', saveBtn);
+
+            // Restore paragraph if input loses focus without saving
+            // input.onblur = function() {
+            //     if (!input.value) input.value = originalText; // Keep original if empty
+            //     input.replaceWith(para);
+            //     saveBtn.remove();
+            // };
+        }
+    </script>
+
+    <h2>Dynamic Data Table</h2>
+
+    <table>
+        <!-- Table Header -->
+        <thead>
+            <tr>
+                {% for header in x_headers %}
+                    <th>{{ header | capitalize }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        
+        <!-- Table Rows -->
+        <tbody>
+            {% set coll_n = {'nr' : 0} %}
+            {% for row in data %}
+            {% set row_n = {'nr' : 0} %}
+                <tr>
+                    <th>{{ y_headers[loop.index0] }}</th>
+                    {% for cell in row %}
+                        <td>
+                           <span  id="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" class="editable" onclick="makeEditable('{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}')">{{ cell }}</span>
+                            <!--
+                            <input 
+                            type="text" 
+                            name="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" 
+                            value="som e"
+                        /> -->
+                        </td>
+                        {{ increment(row_n, 'nr') }}
+                    {% endfor %}
+                    {{ increment(coll_n, 'nr') }}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+</body>
+</html>

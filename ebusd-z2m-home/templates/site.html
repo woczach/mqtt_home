@@ -1,0 +1,55 @@
+{% macro increment(dct, key, inc=1)%}
+    {% if dct.update({key: dct[key] + inc}) %} {% endif %}
+{% endmacro %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Table</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #dddddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Dynamic Data Table</h2>
+    <form action="/submit" method="post">  
+    <table>
+        <!-- Table Header -->
+        <thead>
+            <tr>
+                {% for header in x_headers %}
+                    <th>{{ header | capitalize }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        
+        <!-- Table Rows -->
+        <tbody>
+            {% set coll_n = {'nr' : 0} %}
+            {% for row in data %}
+            {% set row_n = {'nr' : 0} %}
+                <tr>
+                    <th>{{ y_headers[loop.index0] }}</th>
+                    {% for cell in row %}
+                        <td>
+                            {{ cell }}
+                            <input 
+                            type="text" 
+                            name="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" 
+                            value="some"
+                        />
+                        </td>
+                        {{ increment(row_n, 'nr') }}
+                    {% endfor %}
+                    {{ increment(coll_n, 'nr') }}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit">Submit</button>
+</form>
+</body>
+</html>
