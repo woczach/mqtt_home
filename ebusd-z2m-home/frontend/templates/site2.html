@@ -128,7 +128,9 @@
                     {% for cell in row %}
                         <td>
                            <span  id="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" class="editable" onclick="makeEditable('{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}')">{{ cell }}</span>
-                            <!--
+                           
+                           <span  id="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" class="editable" onclick="makeEditable('{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}')">{{ cell }} max</span>
+                           <!--
                             <input 
                             type="text" 
                             name="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" 
