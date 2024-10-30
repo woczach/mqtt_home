@@ -1,5 +1,6 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.12
+FROM python:3-slim-bookworm
+
 
 WORKDIR /user/src/app 
 
@@ -13,7 +14,7 @@ COPY . .
 
 
 #RUN  python -m pip install --upgrade pip
-#RUN pip install -r requirements.txt --user 
+RUN pip install -r requirements.txt --user 
 
 
 CMD ["python","-u","web.py"]

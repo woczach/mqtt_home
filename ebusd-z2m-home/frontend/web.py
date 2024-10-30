@@ -44,40 +44,38 @@ def measurments_preparation_sent(temperature, field):
     #data = [{"measurement": "heat_setting", "fields": {'value': value}}]
     push_to_db('heat', data_point, connection)         
 
-connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}      
+def get_data():
+    connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}      
 
-#measurments_preparation_sent()
-Daytimes = ['Morning', 'Day', 'Evening', 'Night']
-Rooms = ['Jozef', 'Salon', 'Sypialnia', 'Kuchnia' ]
-combinations = []
-data = read_from_db('heat', 'time_measurement', connection, 1)
-points = list(data.get_points())
-data_point = points[0]
-data = []
-for room in Rooms:
-    line = []
-    for time in Daytimes:
-        key = f'{room}{time}Hour'
-        value = data_point.get(key)
-        line.append(value)
-        combinations.append(key)
-    data.append(line) 
-print(combinations)        
+    #measurments_preparation_sent()
+    Daytimes = ['Morning', 'Day', 'Evening', 'Night']
+    Rooms = ['Jozef', 'Salon', 'Sypialnia', 'Kuchnia' ]
+    combinations = []
+    data = read_from_db('heat', 'time_measurement', connection, 1)
+    points = list(data.get_points())
+    data_point = points[0]
+    data = []
+    for room in Rooms:
+        line = []
+        for time in Daytimes:
+            key = f'{room}{time}Hour'
+            value = data_point.get(key)
+            line.append(value)
+            combinations.append(key)
+        data.append(line) 
+    print(combinations)        
+    
+    Daytimes.insert(0, "x") 
+    print(data)
+    return Daytimes, Rooms, data
 
-print(data)
-# data = [
-#     {'name': 'Jozef', 'age': 25, 'city': 'New York'},
-#     {'name': 'Bob', 'age': 30, 'city': 'Los Angeles'},
-#     {'name': 'Charlie', 'age': 35, 'city': 'Chicago'}
-# ]
 
-Daytimes.insert(0, "x")
-print(Daytimes)
-y_headers = ["Row 1", "Row 2", "Row 3"]
+
 
 
 @app.route('/get',methods = ['GET'])
 def render_site():
+    Daytimes, Rooms, data = get_data()
     return flask.render_template('site2.html', x_headers=Daytimes, y_headers=Rooms, data=data)
 
 
