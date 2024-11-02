@@ -1,5 +1,5 @@
 #!/bin/bash
-CONTAINERS="frontend backend"
+CONTAINERS="frontend controller"
 version=0.3
 for TARGET in $CONTAINERS; do
         docker image build --pull --tag parasolnikov/$TARGET:$version --target $TARGET .
