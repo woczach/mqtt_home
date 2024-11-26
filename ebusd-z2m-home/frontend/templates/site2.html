@@ -106,7 +106,7 @@
         }
     </script>
 
-    <h2>Dynamic Data Table</h2>
+    <h2>Configs temps</h2>
 
     <table>
         <!-- Table Header -->
@@ -127,9 +127,9 @@
                     <th>{{ y_headers[loop.index0] }}</th>
                     {% for cell in row %}
                         <td>
-                           <span  id="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" class="editable" onclick="makeEditable('{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}')">{{ cell }}</span>
+                           <span  id="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" class="editable" onclick="makeEditable('{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}')">{{ cell[0] }}</span>
                            
-                           <span  id="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}" class="editable" onclick="makeEditable('{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}')">{{ cell }} max</span>
+                           <span  id="{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}Max" class="editable" onclick="makeEditable('{{ y_headers[coll_n.nr]}}{{ x_headers[row_n.nr + 1]  }}Max')">{{ cell[1] }} max</span>
                            <!--
                             <input 
                             type="text" 
@@ -145,6 +145,38 @@
         </tbody>
     </table>
 
+    <h2>Configs times</h2>
+
+    <table>
+        <!-- Table Header -->
+        <thead>
+            <tr>
+                {% for header in x_headers %}
+                    <th>{{ header | capitalize }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        
+        <!-- Table Rows -->
+        <tbody>
+
+                <tr>
+                    <th>Time</th>
+                    {% set time_n = {'nr' : 0} %}
+                    {% for day_cell in time_data %}
+                        <td>
+                           <span  id="Time_{{x_headers[time_n.nr + 1]}}" class="editable" onclick="makeEditable('Time_{{x_headers[time_n.nr + 1]}}')">{{ day_cell }}</span>
+                           
+
+
+                        </td>
+                        {{ increment(time_n, 'nr') }}
+                    {% endfor %}
+              
+                </tr>
+      
+        </tbody>
+    </table>    
 
 </body>
 </html>

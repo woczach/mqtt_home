@@ -15,21 +15,21 @@ def measurments_preparation_sent():
                 "NightHour": "21:30"
                 },
                 "fields": {
-                "JozefMorningHour": float(21.2),
-                "JozefDayHour": float(20.5),
-                "JozefEveningHour": float(21.2),
-                "JozefNightHour": float(21.3),
-                "SalonMorningHour": float(22.3),
-                "SalonDayHour": float(21.8),
-                "SalonEveningHour": float(21.8),
-                "SalonNightHour": float(0),
+                "JozefMorningHour": float(0),
+                "JozefDayHour": float(0),
+                "JozefEveningHour": float(0),
+                "JozefNightHour": float(0),
+                "SalonMorningHour": float(0),
+                "SalonDayHour": float(17),
+                "SalonEveningHour": float(0),
+                "SalonNightHour": float(17),
                 "SypialniaMorningHour": float(0),
                 "SypialniaDayHour": float(0),
-                "SypialniaEveningHour": float(22.5),
-                "SypialniaNightHour": float(22.5),
+                "SypialniaEveningHour": float(0),
+                "SypialniaNightHour": float(0),
                 "KuchniaMorningHour": float(0),
-                "KuchniaDayHour": float(21),
-                "KuchniaEveningHour": float(21),
+                "KuchniaDayHour": float(0),
+                "KuchniaEveningHour": float(0),
                 "KuchniaNightHour": float(0)
                 }
             }

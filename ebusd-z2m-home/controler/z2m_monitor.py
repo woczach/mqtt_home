@@ -1,7 +1,7 @@
 
 import random
 from libs import connect_mqtt, publish, measurments_preparation_sent, return_current_settings, return_current_temps, push_to_db
-import pika
+
 from time import sleep
 import threading
 import json
