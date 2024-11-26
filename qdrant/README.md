@@ -21,3 +21,18 @@ This document provides a step-by-step guide to running the application, accessin
 
    ```bash
    python3 list_shards.py
+
+ --- 
+ ## Accessing the Application 
+ 1. Open a web browser of your choice. 
+ 2. Navigate to the following URL: ```plaintext http://127.0.0.1:5002/get ``` 
+ 
+ --- 
+ ## Using the Application 
+ 1. Fill in the required fields in the form displayed on the web page. 
+ 2. Click the submit button to be redirected to the **result page**. 
+ 3. View the output or results based on your input. --- 
+ ## Notes 
+ - Ensure that the server is running before accessing the application via the browser. 
+ - Use the provided `127.0.0.1` address unless explicitly configured otherwise. 
+ - If you encounter any issues or have questions, feel free to reach out for support.    
