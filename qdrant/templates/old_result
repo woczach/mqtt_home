@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collection Table</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h1>Collections Overview</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Collection Name</th>
+                <th>Shard Count</th>
+                <th>Local Shards</th>
+                <th>Remote Shards</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for collection, details in data.items() %}
+            <tr>
+                <td>{{ collection }}</td>
+                <td>{{ details.shard_count }}</td>
+                <td>
+                    {% for shard in details.local_shards %}
+                        <div>Shard ID: {{ shard.shard_id }}</div>
+                        <div>Points Count: {{ shard.points_count }}</div>
+                        <div>State: {{ shard.state }}</div>
+                        <br>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if details.remote_shards %}
+                        {% for shard in details.remote_shards %}
+                            <div>Shard ID: {{ shard.shard_id }}</div>
+                            <div>Points Count: {{ shard.points_count }}</div>
+                            <div>State: {{ shard.state }}</div>
+                            <br>
+                        {% endfor %}
+                    {% else %}
+                        <div>None</div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
