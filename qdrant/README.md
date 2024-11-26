@@ -25,7 +25,7 @@ This document provides a step-by-step guide to running the application, accessin
  --- 
  ## Accessing the Application 
  1. Open a web browser of your choice. 
- 2. Navigate to the following URL: ```plaintext http://127.0.0.1:5002/get ``` 
+ 2. Navigate to the following URL: ``` http://127.0.0.1:5002/get ``` 
  
  --- 
  ## Using the Application 
