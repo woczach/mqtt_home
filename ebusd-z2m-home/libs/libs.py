@@ -3,6 +3,7 @@ from influxdb import InfluxDBClient
 from datetime import datetime, timezone, timedelta
 import random
 from time import sleep
+import json
 
 timeout = 5 * 60
 connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}      
@@ -11,10 +12,51 @@ broker = '192.168.0.230'
 port = 11883
 topic = "FlowTemp"
 client_id = f'publish-{random.randint(0, 100)}'
+timers = {}
+
+
+def subscribe_mqtt_for_sending_to_influx(client: mqtt_client, topics):
+    def on_message(client, userdata, msg):
+        connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}     
+        print(msg.topic)
+
+        global timers
+        if 'ebusd' in msg.topic:
+            try:
+                for topic, type in topics.items():
+                    if topic in msg.topic:
+                        print(f'INFO {topic} found within {timers[topic]} clearing' )
+                        timers[topic] = 0
+                        if 'get' not in msg.topic:
+                            measurments_preparation_sent(msg.topic, type, msg.payload)
+            except Exception as e:
+                print(f'ERROR in ebusd {e}')
+        if 'zigbee2mqtt' in msg.topic:
+            try:
+                payload = json.loads(msg.payload.decode())
+                fields = {'current_heating_setpoint': float(payload['current_heating_setpoint']), 'local_temperature': float(payload['local_temperature'])}
+                data = [{"measurement": str(msg.topic), "fields": fields}]
+                push_to_db('heat', data, connection)                  
+            except Exception as e:
+                print(f'ERROR in zigbee {e}')
+            
+        if 'esp' in msg.topic:
+            try:
+                payload = msg.payload.decode()
+                data = [{"measurement": str(msg.topic), "fields": {'value': float(payload)}}]
+                push_to_db('heat', data, connection)  
+            except Exception as e:
+                print(f'ERROR in esp {e}')             
+    topic = ["zigbee2mqtt/+", "ebusd/bai/+", "esp/+"]
+    for t in topic:
+        client.subscribe(t)
+    client.on_message = on_message
 
 
 
 def check_boiler_messages(topics):
+
+    global timers
     def init(topics_to_init):
 
         client = connect_mqtt(client_id, broker, port)
@@ -24,7 +66,7 @@ def check_boiler_messages(topics):
             publish(client, full_topic, "?3")
         client.loop_stop()       
         
-    global timers
+
     for topic in topics:
         timers[topic] = 0
     while True:

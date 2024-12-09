@@ -19,4 +19,7 @@ WORKDIR /user/src/app
 COPY controler/. .
 CMD ["python","-u","z2m_monitor.py"]
 
-
+FROM python-requirements-libs AS watcher
+WORKDIR /user/src/app 
+COPY watcher/. .
+CMD ["python","-u","ebusd_monitor.py"]
