@@ -1,9 +1,45 @@
 from paho.mqtt import client as mqtt_client
 from influxdb import InfluxDBClient
 from datetime import datetime, timezone, timedelta
+import random
+from time import sleep
 
-
+timeout = 5 * 60
 connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}      
+
+broker = '192.168.0.230'
+port = 11883
+topic = "FlowTemp"
+client_id = f'publish-{random.randint(0, 100)}'
+
+
+
+def check_boiler_messages(topics):
+    def init(topics_to_init):
+
+        client = connect_mqtt(client_id, broker, port)
+        client.loop_start()    
+        for topic in topics_to_init:
+            full_topic = f'ebusd/bai/{topic}/get'
+            publish(client, full_topic, "?3")
+        client.loop_stop()       
+        
+    global timers
+    for topic in topics:
+        timers[topic] = 0
+    while True:
+        to_reset = []
+        for topic in topics:
+            timers[topic] += 1
+            if timers[topic] > timeout:
+                print(f'ERROR {topic} have no messages retrying' )
+                to_reset.append(topic)
+        if to_reset:
+            init(to_reset)        
+        sleep(1)       
+
+
+
 
 def connect_mqtt(client_id, broker, port) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -89,7 +125,7 @@ def return_current_settings():
 def return_current_temps():
     current_time = datetime.now(timezone.utc)
     rooms = {
-        'Jozef': {'measurment': 'Tasmota_switch', 'value_name': 'temperatura'},
+        'Jozef': {'measurment': 'esp/tem', 'value_name': 'value'},
         'Kuchnia': {'measurment':  'esp/sypialnia', 'value_name': 'value'},
         'Salon': {'measurment':  'rpi_temperatura', 'value_name': 'celsius'},
         'Sypialnia': {'measurment':  'esp/kuchnia', 'value_name': 'value'}

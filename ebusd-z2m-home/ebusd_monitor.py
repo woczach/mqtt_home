@@ -1,16 +1,13 @@
 
 import random
-from libs import connect_mqtt, publish, measurments_preparation_sent
-import pika
-from time import sleep
+from libs import connect_mqtt, publish, measurments_preparation_sent, check_boiler_messages
+
+
 import threading
 
 
-broker = '192.168.0.230'
-port = 11883
-topic = "FlowTemp"
-client_id = f'publish-{random.randint(0, 100)}'
-timeout = 5 * 60
+
+
 
 topics = {
     "FlowTempDesired": 'float',      # 40.00
@@ -45,29 +42,6 @@ topics = {
 timers = {}
 
 
-def check_boiler_messages():
-    def init(topics_to_init):
-
-        client = connect_mqtt(client_id, broker, port)
-        client.loop_start()    
-        for topic in topics_to_init:
-            full_topic = f'ebusd/bai/{topic}/get'
-            publish(client, full_topic, "?3")
-        client.loop_stop()       
-        
-    global timers
-    for topic in topics:
-        timers[topic] = 0
-    while True:
-        to_reset = []
-        for topic in topics:
-            timers[topic] += 1
-            if timers[topic] > timeout:
-                print(f'ERROR {topic} have no messages retrying' )
-                to_reset.append(topic)
-        if to_reset:
-            init(to_reset)        
-        sleep(1)       
 
 
 
@@ -101,7 +75,7 @@ def subscribe_boiler_messages():
 if __name__ == "__main__":
 
     t1 = threading.Thread(target=subscribe_boiler_messages)
-    t2 = threading.Thread(target=check_boiler_messages)
+    t2 = threading.Thread(target=check_boiler_messages, args=(topics))
     t1.start()
     t2.start()
 
