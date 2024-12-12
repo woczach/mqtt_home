@@ -111,6 +111,105 @@ def publish(client, topic, message):
         print(f"Failed to send message to topic {topic}")
 
 
+def Heating_main(temp_diff):
+    topics_z2m = {
+        'Salon': "0xa4c1384e6bcc60c6", 
+        'Kuchnia': "0xa4c138d0aa4d2b86",
+        'Jozef': "0xa4c138ad1d132790",
+        'Jadalnia': "0xa4c13818b181eda9",
+        'Sypialnia': "0x94deb8fffe2e751a"
+    }
+
+
+
+
+    OFF_VALVE_TEMP = 16.0
+    ON_VALVE_TEMP = 24.0
+    WODA = 42
+    WODAOFF= 0    
+    water_times = ['5:00', '16:00']
+    PIEC_OFF = 1
+    settemp = 40
+    podiff = {-0.25: 45, -0.5:50, -2:60}
+    jodiff = {-0.5: 40, -1: 45, -2: 50}
+
+    print(temp_diff)
+    close_valve = [k for k, v in temp_diff.items() if v >= 1]
+    open_valve = [k  for k, v in topics_z2m.items() if k not in close_valve]
+    smallest_key = min(temp_diff, key=temp_diff.get)
+    smallest_value = temp_diff[smallest_key]
+
+    if smallest_value < 0:
+        PIEC_OFF = 0
+        if smallest_key == 'Jozef':
+            for k,v in jodiff.items():
+                if (smallest_value) < k:
+                    settemp = v
+        else:            
+            for k,v in podiff.items():
+                if (smallest_value) < k:
+                    settemp = v
+    else:
+        PIEC_OFF = 1
+    
+    print(f'close valve = {close_valve}, open valve = {open_valve}, smallest diff {smallest_key}, smallest value {smallest_value}')
+    print(f'piec off = {PIEC_OFF}, settemp = {settemp}')
+    fields = {}
+    client = connect_mqtt(client_id, broker, port)
+    client.loop_start()        
+    for close in close_valve:
+        fields[close] = OFF_VALVE_TEMP
+        full_topic = f'zigbee2mqtt/{topics_z2m[close]}/set'
+        message = json.dumps({"current_heating_setpoint": str(OFF_VALVE_TEMP)})
+        publish(client, full_topic, message)
+    for open in open_valve:
+        fields[open]= ON_VALVE_TEMP        
+        full_topic = f'zigbee2mqtt/{topics_z2m[open]}/set'
+        message = json.dumps({"current_heating_setpoint":  str(ON_VALVE_TEMP)})
+        publish(client, full_topic, str(message))
+    if PIEC_OFF == 0:
+        fields['Heating_temp'] = settemp
+        message_to_piec = f'0;{settemp};{WODA};-;-;{PIEC_OFF};0;{WODAOFF};-;0;0;0'   
+        topic_piec = 'ebusd/BAI/SetModeOverride/set'
+        publish(client, topic_piec, message_to_piec)
+    else:
+        fields['Heating_temp'] = 0
+        message_to_piec = f'0;{settemp};{WODA};-;-;{PIEC_OFF};0;{WODAOFF};-;0;0;0'   
+        topic_piec = 'ebusd/BAI/SetModeOverride/set'
+        publish(client, topic_piec, message_to_piec)
+    client.loop_stop()     
+
+    connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}   
+    data_point = [
+        {
+        "measurement": "settings",
+        "fields": fields
+        }
+    ]
+    print(data_point)
+    push_to_db('heat', data_point, connection) 
+
+
+def regulate_temp():
+    while True:
+
+        settings, time_of_day = return_current_settings()
+
+            
+        print(settings)
+        current_temps = return_current_temps()
+        print(current_temps)
+        temp_diff = {}
+        for pokoj, set_temp in settings.items():
+            print(current_temps[pokoj][0])
+            if settings[pokoj] != 0:
+                temp_diff[pokoj] = current_temps[pokoj][0]['value'] - set_temp
+                print(f"pokoj {pokoj} set temp {set_temp} current temp  {current_temps[pokoj][0]['value']} temp {temp_diff[pokoj]}")
+
+        Heating_main(temp_diff)
+
+        sleep(120)
+
 def return_current_settings():
     current_time = datetime.now().time()
     data = read_from_db('heat', 'time_measurement', connection, 1)
