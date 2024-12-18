@@ -1,0 +1,23 @@
+info  2024-07-16 08:34:13: Logging to console and directory: '/app/data/log/2024-07-16.08-34-13' filename: log.txt
+info  2024-07-16 08:34:13: Starting Zigbee2MQTT version 1.36.1 (commit #ffc2ff1)
+info  2024-07-16 08:34:13: Starting zigbee-herdsman (0.40.3)
+info  2024-07-16 08:34:15: zigbee-herdsman started (resumed)
+info  2024-07-16 08:34:15: Coordinator firmware version: '{"meta":{"maintrel":1,"majorrel":2,"minorrel":7,"product":1,"revision":20210708,"transportrev":2},"type":"zStack3x0"}'
+info  2024-07-16 08:34:15: Currently 3 devices are joined:
+info  2024-07-16 08:34:15: 0xa4c13818b181eda9 (0xa4c13818b181eda9): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+info  2024-07-16 08:34:15: 0x94deb8fffe2e751a (0x94deb8fffe2e751a): GS361A-H04 - Siterwell Radiator valve with thermostat (EndDevice)
+info  2024-07-16 08:34:15: 0xa4c138ad1d132790 (0xa4c138ad1d132790): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+info  2024-07-16 08:34:15: Zigbee: disabling joining new devices.
+info  2024-07-16 08:34:15: Connecting to MQTT server at mqtt://rabbit
+info  2024-07-16 08:34:15: Connected to MQTT server
+info  2024-07-16 08:34:15: MQTT publish: topic 'zigbee2mqtt/bridge/state', payload '{"state":"online"}'
+info  2024-07-16 08:34:15: Started frontend on port 8080
+info  2024-07-16 08:34:15: MQTT publish: topic 'zigbee2mqtt/0xa4c13818b181eda9', payload '{"battery_low":false,"child_lock":"UNLOCK","current_heating_setpoint":35,"frost_protection":"OFF","linkquality":60,"local_temperature":21,"running_state":"heat","schedule_friday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_monday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_saturday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_sunday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_thursday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_tuesday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_wednesday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","system_mode":"heat"}'
+info  2024-07-16 08:34:15: MQTT publish: topic 'zigbee2mqtt/0x94deb8fffe2e751a', payload '{"away_mode":"OFF","battery":61,"child_lock":"UNLOCK","current_heating_setpoint":25.5,"linkquality":129,"local_temperature":24.4,"preset":"manual","system_mode":"heat","valve_detection":"ON","window_detection":"ON"}'
+info  2024-07-16 08:34:15: MQTT publish: topic 'zigbee2mqtt/0xa4c138ad1d132790', payload '{"battery_low":false,"child_lock":"LOCK","current_heating_setpoint":27,"frost_protection":"OFF","linkquality":51,"local_temperature":21,"local_temperature_calibration":0,"running_state":"heat","scale_protection":"OFF","schedule_friday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_monday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_saturday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_sunday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_thursday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_tuesday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","schedule_wednesday":"06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0","system_mode":"heat"}'
+info  2024-07-16 08:34:15: Zigbee2MQTT started!
+info  2024-07-16 08:34:20: MQTT publish: topic 'zigbee2mqtt/0x94deb8fffe2e751a', payload '{"away_mode":"OFF","battery":71,"child_lock":"UNLOCK","current_heating_setpoint":25.5,"linkquality":117,"local_temperature":24.4,"preset":"manual","system_mode":"heat","valve_detection":"ON","window_detection":"ON"}'
+info  2024-07-16 08:34:20: MQTT publish: topic 'zigbee2mqtt/0x94deb8fffe2e751a', payload '{"away_mode":"OFF","battery":71,"child_lock":"UNLOCK","current_heating_setpoint":25.5,"linkquality":120,"local_temperature":24.4,"preset":"manual","system_mode":"heat","valve_detection":"ON","window_detection":"ON"}'
+info  2024-07-16 08:34:20: MQTT publish: topic 'zigbee2mqtt/0x94deb8fffe2e751a', payload '{"away_mode":"OFF","battery":71,"child_lock":"UNLOCK","current_heating_setpoint":25.5,"linkquality":120,"local_temperature":24.4,"preset":"manual","system_mode":"heat","valve_detection":"ON","window_detection":"ON"}'
+info  2024-07-16 08:34:46: MQTT publish: topic 'zigbee2mqtt/bridge/event', payload '{"data":{"friendly_name":"0xa4c13818b181eda9","ieee_address":"0xa4c13818b181eda9"},"type":"device_announce"}'
+info  2024-07-16 08:34:47: MQTT publish: topic 'zigbee2mqtt/bridge/event', payload '{"data":{"friendly_name":"0xa4c138ad1d132790","ieee_address":"0xa4c138ad1d132790"},"type":"device_announce"}'

@@ -1,0 +1,24 @@
+info  2024-07-16 08:33:48: Logging to console and directory: '/app/data/log/2024-07-16.08-33-48' filename: log.txt
+info  2024-07-16 08:33:48: Starting Zigbee2MQTT version 1.36.1 (commit #ffc2ff1)
+info  2024-07-16 08:33:48: Starting zigbee-herdsman (0.40.3)
+info  2024-07-16 08:33:52: zigbee-herdsman started (resumed)
+info  2024-07-16 08:33:52: Coordinator firmware version: '{"meta":{"maintrel":1,"majorrel":2,"minorrel":7,"product":1,"revision":20210708,"transportrev":2},"type":"zStack3x0"}'
+info  2024-07-16 08:33:52: Currently 3 devices are joined:
+info  2024-07-16 08:33:52: 0xa4c13818b181eda9 (0xa4c13818b181eda9): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+info  2024-07-16 08:33:52: 0x94deb8fffe2e751a (0x94deb8fffe2e751a): GS361A-H04 - Siterwell Radiator valve with thermostat (EndDevice)
+info  2024-07-16 08:33:52: 0xa4c138ad1d132790 (0xa4c138ad1d132790): ME168 - AVATTO Thermostatic radiator valve (EndDevice)
+info  2024-07-16 08:33:53: Zigbee: disabling joining new devices.
+info  2024-07-16 08:33:53: Connecting to MQTT server at mqtt://rabbit
+error 2024-07-16 08:33:53: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:33:53: MQTT failed to connect, exiting...
+info  2024-07-16 08:33:53: Stopping zigbee-herdsman...
+error 2024-07-16 08:33:54: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:33:55: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:33:56: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:33:57: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:33:58: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:33:59: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:34:00: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:34:01: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+error 2024-07-16 08:34:02: MQTT error: connect ECONNREFUSED 172.20.0.4:1883
+info  2024-07-16 08:34:02: Stopped zigbee-herdsman

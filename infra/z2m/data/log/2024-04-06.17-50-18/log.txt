@@ -1,0 +1,22 @@
+info  2024-04-06 17:50:18: Logging to console and directory: '/app/data/log/2024-04-06.17-50-18' filename: log.txt
+info  2024-04-06 17:50:18: Starting Zigbee2MQTT version 1.36.1 (commit #ffc2ff1)
+info  2024-04-06 17:50:18: Starting zigbee-herdsman (0.40.3)
+info  2024-04-06 17:50:20: zigbee-herdsman started (resumed)
+info  2024-04-06 17:50:20: Coordinator firmware version: '{"meta":{"maintrel":1,"majorrel":2,"minorrel":7,"product":1,"revision":20210708,"transportrev":2},"type":"zStack3x0"}'
+info  2024-04-06 17:50:20: Currently 0 devices are joined:
+info  2024-04-06 17:50:20: Zigbee: disabling joining new devices.
+info  2024-04-06 17:50:20: Connecting to MQTT server at mqtt://rabbit
+error 2024-04-06 17:50:20: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:20: MQTT failed to connect, exiting...
+info  2024-04-06 17:50:20: Stopping zigbee-herdsman...
+error 2024-04-06 17:50:21: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:22: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:23: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:24: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:25: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:26: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:27: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:28: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:29: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+error 2024-04-06 17:50:30: MQTT error: connect ECONNREFUSED 172.20.0.9:1883
+info  2024-04-06 17:50:30: Stopped zigbee-herdsman
