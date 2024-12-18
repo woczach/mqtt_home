@@ -1,0 +1,30 @@
+#/root/mqtt_home/infra/haproxy
+services:
+  haproxy:
+    image: haproxytech/haproxy-alpine:2.4
+
+    ports:
+      - '8085:8085'
+      - '8085:8085'
+      - '8404:8404'
+    volumes:
+
+      - '/root/mqtt_home/infra/haproxy/haproxy.file:/usr/local/etc/haproxy/haproxy.cfg'
+      #- '/home/wojciech/idk.pem:/usr/local/etc/haproxy/dev7.pem'
+      #- '/home/wojciech/idk2.pem:/usr/local/etc/haproxy/dev34.pem'      
+      #- '/app/smartkyc/servers/ssl.test:/usr/local/etc/ssl/cong'
+    restart: unless-stopped
+    expose:
+      - "8085"
+      - "8404"
+      - "8084"
+ #   networks:
+ #     - skyc
+  #    - haproxy
+#volumes:
+#  logs:
+#  stashdata:
+#networks:
+#  skyc:
+#  haproxy:
+#    external: true  

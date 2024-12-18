@@ -1,0 +1,47 @@
+
+global
+  stats socket /var/run/api.sock user haproxy group haproxy mode 660 level admin expose-fd listeners
+  log stdout format raw local0 info
+
+defaults
+  mode http
+  timeout client 10s
+  timeout connect 5s
+  timeout server 10s
+  timeout http-request 10s
+  log global
+  default-server init-addr last,libc,none
+
+frontend stats
+  bind *:8404
+  stats enable
+  stats uri /
+  stats refresh 10s
+
+frontend myfrontend
+  #bind *:8083 ssl crt /etc/haproxy/dev7.pem crt /etc/haproxy/dev34.pem
+  mode  http
+
+  acl hostdev7 hdr(host) -i grafana.purpucle.pl:8085
+  use_backend backdev7 if hostdev7
+  acl hostdev7ebrd hdr(host) -i zigbee.purpucle.pl:8085
+  use_backend backdev7ebrd if hostdev7ebrd
+  acl hostdev34 hdr(host) -i dev34.smartkyc.com:8083
+  use_backend backdev34 if hostdev34
+
+
+
+
+
+backend backdev7
+  mode http
+  balance roundrobin
+  server serverdev7 grafana:3000 check
+backend backdev7ebrd
+  mode http
+  balance roundrobin
+  server serverdev7ebrd zigbee2mqtt:8080 check
+backend backdev34
+  mode http
+  balance roundrobin
+  server serverdev34 dev34main:8080 check
