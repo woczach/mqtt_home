@@ -13,7 +13,7 @@
         "local_temperature": 18,
         "system_mode": "heat",
         "current_heating_setpoint": 24,
-        "linkquality": 90,
+        "linkquality": 105,
         "child_lock": "LOCK",
         "scale_protection": "OFF",
         "local_temperature_calibration": 0
@@ -26,7 +26,7 @@
         "window_detection": "ON",
         "valve_detection": "ON",
         "child_lock": "LOCK",
-        "local_temperature": 21.9,
+        "local_temperature": 22.1,
         "battery": 5,
         "linkquality": 105
     },
@@ -47,7 +47,7 @@
         "frost_protection": "OFF",
         "scale_protection": "OFF",
         "local_temperature_calibration": 0,
-        "linkquality": 39
+        "linkquality": 48
     },
     "0xa4c138d0aa4d2b86": {
         "system_mode": "heat",
@@ -63,7 +63,7 @@
         "schedule_saturday": "06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0",
         "schedule_sunday": "06:00/21.0 08:00/16.0 12:00/21.0 14:00/16.0",
         "battery_low": false,
-        "linkquality": 66
+        "linkquality": 72
     },
     "0xa4c1384e6bcc60c6": {
         "system_mode": "heat",
@@ -80,6 +80,6 @@
         "battery_low": false,
         "current_heating_setpoint": 24,
         "frost_protection": "OFF",
-        "linkquality": 48
+        "linkquality": 15
     }
 }

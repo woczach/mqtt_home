@@ -20,6 +20,7 @@ frontend stats
 
 frontend myfrontend
   #bind *:8083 ssl crt /etc/haproxy/dev7.pem crt /etc/haproxy/dev34.pem
+  bind *:8085
   mode  http
 
   acl hostdev7 hdr(host) -i grafana.purpucle.pl:8085
@@ -36,11 +37,11 @@ frontend myfrontend
 backend backdev7
   mode http
   balance roundrobin
-  server serverdev7 grafana:3000 check
+  server serverdev7 purpucle.pl:3000 check
 backend backdev7ebrd
   mode http
   balance roundrobin
-  server serverdev7ebrd zigbee2mqtt:8080 check
+  server serverdev7ebrd purpucle.pl:8080 check
 backend backdev34
   mode http
   balance roundrobin
