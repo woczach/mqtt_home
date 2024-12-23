@@ -4,11 +4,11 @@ services:
     environment:
       KC_HOSTNAME: auth.purpucle.pl
       KC_HOSTNAME_PORT: 7080
-      KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+#      KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: "true"
-      KC_LOG_LEVEL: info
+      KC_LOG_LEVEL: debug
 #    healthcheck:
 #      test: ["CMD", "curl", "-f", "http://localhost:7080/health/ready"]
 #      interval: 15s
