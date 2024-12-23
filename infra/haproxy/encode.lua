@@ -1,6 +1,6 @@
 
   
-local function encode(txn)
+local function encode()
 str = txn.get_var(txn,"txn.to_encode")  
 core.Alert(string.format("clear  is %s", str))
 Key53 = 8186484168865098  
@@ -29,7 +29,7 @@ Key14 = 4887
   ))
 end
   
-core.Alert(string.format("encrypted  is %s", ('%02x'):format(c)))
-txn.set_var(txn,'txn.encoded',('%02x'):format(c))
+
+
 core.register_action("encode",{'http-req'}, encode, 0)
   
