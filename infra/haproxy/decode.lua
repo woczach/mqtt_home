@@ -14,8 +14,8 @@ local  function decode(txn)
         c = tonumber(c, 16)
         local m = (c + (H - M) / 128) * (2*M + 1) % 256
         K = L * F + H + c + m
-        core.Alert(string.format("decoded is %s", m))
-        txn.set_var(txn,'txn.decoded',m)
+        core.Alert(string.format("decoded is %s", string.char(m)))
+        txn.set_var(txn,'txn.decoded',string.char(m))
         return string.char(m)
       end
     ))
