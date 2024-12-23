@@ -1,7 +1,7 @@
 
   
 local function encode(txn)
-str = txn.get_var(txn,"req.to_encode")  
+str = txn.get_var(txn,"txn.to_encode")  
 core.Alert(string.format("clear  is %s", str))
 Key53 = 8186484168865098  
 Key14 = 4887
@@ -24,7 +24,7 @@ Key14 = 4887
       local c = (m * inv256[M] - (H - M) / 128) % 256
       K = L * F + H + c + m
       core.Alert(string.format("encrypted  is %s", c))
-      txn.set_var(txn,'req.encoded',m)
+      txn.set_var(txn,'txn.encoded',m)
       return ('%02x'):format(c)
     end
   ))

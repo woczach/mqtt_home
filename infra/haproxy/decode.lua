@@ -1,7 +1,7 @@
 
   
 local  function decode(txn)
-    str = txn.get_var(txn,"req.to_decode")  
+    str = txn.get_var(txn,"txn.to_decode")  
     core.Alert(string.format("to be decoded  is %s", str))
     Key53 = 8186484168865098
     Key14 = 4887      
@@ -15,7 +15,7 @@ local  function decode(txn)
         local m = (c + (H - M) / 128) * (2*M + 1) % 256
         K = L * F + H + c + m
         core.Alert(string.format("decoded is %s", m))
-        txn.set_var(txn,'req.decoded',m)
+        txn.set_var(txn,'txn.decoded',m)
         return string.char(m)
       end
     ))
