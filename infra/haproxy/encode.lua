@@ -23,12 +23,13 @@ Key14 = 4887
       m = m:byte()
       local c = (m * inv256[M] - (H - M) / 128) % 256
       K = L * F + H + c + m
-      core.Alert(string.format("encrypted  is %s", ('%02x'):format(c)))
-      txn.set_var(txn,'txn.encoded',('%02x'):format(c))
+
       return ('%02x'):format(c)
     end
   ))
 end
   
+core.Alert(string.format("encrypted  is %s", ('%02x'):format(c)))
+txn.set_var(txn,'txn.encoded',('%02x'):format(c))
 core.register_action("encode",{'http-req'}, encode, 0)
   

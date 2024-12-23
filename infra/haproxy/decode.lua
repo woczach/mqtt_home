@@ -14,12 +14,12 @@ local  function decode(txn)
         c = tonumber(c, 16)
         local m = (c + (H - M) / 128) * (2*M + 1) % 256
         K = L * F + H + c + m
-        core.Alert(string.format("decoded is %s", string.char(m)))
-        txn.set_var(txn,'txn.decoded',string.char(m))
+
         return string.char(m)
       end
     ))
   end
 
-  
+core.Alert(string.format("decoded is %s", string.char(m)))
+txn.set_var(txn,'txn.decoded',string.char(m))  
 core.register_action("decode",{'http-req'}, decode, 0)
