@@ -20,6 +20,6 @@ local  function decode(txn)
       end
     ))
   end
-end
+
   
 core.register_action("decode",{'http-req'}, decode, 0)
