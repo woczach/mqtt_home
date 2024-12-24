@@ -29,6 +29,9 @@ do
     ))
   end
 
+
+
+
   function decode(str)
     local K, F = Key53, 16384 + Key14
     return (str:gsub('%x%x',
