@@ -48,9 +48,28 @@ do
   end
 end
 
+function split_string(input_str, delimiter)
+  if delimiter == '' then return {input_str} end
+  local result = {}
+  local pattern = string.format("([^%s]+)", delimiter)
+  for match in (input_str):gmatch(pattern) do
+      table.insert(result, match)
+  end
+  return result
+end
+
+function return_permissions(str)
+  return split_string(decode(str),'-')[2]
+end
+
+function return_timestamp(str)
+  return split_string(decode(str),'-')[1]
+end
+
 -- local s = 'Hello world'
 -- print(       encode(s) ) --> 80897dfa1dd85ec196bc84
 -- print(decode(encode(s))) --> Hello world
-
+core.register_converters("return_permissions", return_permissions)
+core.register_converters("return_timestamp", return_timestamp)
 core.register_converters("encode", encode)
 core.register_converters("decode", decode)
