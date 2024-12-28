@@ -4,6 +4,7 @@ local function magictokens(txn)
     -- Get the auth code variable
     -------------------------------
     authcode = txn.get_var(txn,"req.authcode")
+    redirect_uri = txn.get_var(txn,"req.redirect_addr")
     -- core.Debug(string."auth code is authcode")
 
     -------------------------------
@@ -16,7 +17,7 @@ local function magictokens(txn)
     token_endpoint = string.format("/realms/%s/protocol/openid-connect/token",realm)
     client_id="grafana"
     grant_type="authorization_code"
-    redirect_uri="http://grafana.purpucle.pl:8085/"
+    -- redirect_uri="http://grafana.purpucle.pl:8085/"
     data=string.format("grant_type=%s&client_id=%s&redirect_uri=%s&code=%s",grant_type,client_id,redirect_uri,authcode)
     accepting = "Host: 192.168.0.230:7080"
     auth_header = string.format("Authorization: Basic %s",client_id_and_secret)
