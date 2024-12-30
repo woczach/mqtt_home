@@ -12,9 +12,9 @@ token = os.environ.get("INFLUXDB_TOKEN")
 
 
 
-DBUSER = os.environ.get('DBUSER')
-DBPASS = os.environ.get('DBPASS')
-DBIP = os.environ.get('DBIP')
+DBUSER = 'username'
+DBPASS = 'password'
+DBIP = '192.168.0.230'
 #USER =  os.environ.get('USER')
 #PASSWORD = os.environ.get('PASSWORD')
 #token = os.environ.get("INFLUXDB_TOKEN")
@@ -47,7 +47,7 @@ def push_to_db_array(db, bodies):
 
 broker = '192.168.0.230'
 port = 11883
-topic = ["zigbee2mqtt/+", "ebusd/bai/+", 'tele/tasmota_B80F1C/SENSOR']
+topic = ["zigbee2mqtt/+", "ebusd/bai/+", 'tele/tasmota_B80F1C/SENSOR', "esp/+"]
 # Generate a Client ID with the subscribe prefix.
 client_id = f'subscribe-{random.randint(0, 100)}'
 # username = 'emqx'
