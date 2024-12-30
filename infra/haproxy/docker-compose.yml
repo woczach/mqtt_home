@@ -14,6 +14,8 @@ services:
       - '/root/mqtt_home/infra/haproxy/decode.lua:/usr/local/etc/haproxy/decode.lua'
       - '/root/mqtt_home/infra/haproxy/encode.lua:/usr/local/etc/haproxy/encode.lua'      
       - '/root/mqtt_home/infra/haproxy/print_berrer.lua:/usr/local/etc/haproxy/print_berrer.lua'
+      - '/root/letsencrypt/etc-letsencrypt/live:/usr/local/etc/haproxy/live'
+
       #- '/home/wojciech/idk2.pem:/usr/local/etc/haproxy/dev34.pem'      
       #- '/app/smartkyc/servers/ssl.test:/usr/local/etc/ssl/cong'
     restart: unless-stopped
