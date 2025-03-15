@@ -46,8 +46,20 @@ def subscribe_mqtt_for_sending_to_influx(client: mqtt_client, topics):
                 data = [{"measurement": str(msg.topic), "fields": {'value': float(payload)}}]
                 push_to_db('heat', data, connection)  
             except Exception as e:
-                print(f'ERROR in esp {e}')             
-    topic = ["zigbee2mqtt/+", "ebusd/bai/+", "esp/+"]
+                print(f'ERROR in esp {e}')  
+        if 'SENSOR' in msg.topic:
+            try:
+                payload = json.loads(msg.payload.decode())
+                j_data = {}
+                for k,v in payload.items():
+                    if(isinstance(v, dict)):
+                        for k1, v1 in v.items():
+                            j_data[f'{k}_{k1}'] = float(v1)
+                data = [{"measurement": str(msg.topic), "fields": j_data}]
+                push_to_db('heat', data, connection)  
+            except Exception as e:
+                print(f'ERROR in tasmota {e}')                              
+    topic = ["zigbee2mqtt/+", "ebusd/bai/+", "esp/+", "tele/+/SENSOR"]
     for t in topic:
         client.subscribe(t)
     client.on_message = on_message
