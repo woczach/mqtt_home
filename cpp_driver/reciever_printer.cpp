@@ -1,10 +1,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <ctime>
+
 #include <curl/curl.h> // For HTTP requests
 #include "json.hpp"
 using json = nlohmann::json;
-
+#include <sstream>
 #include "led-matrix.h" // Main matrix header - Needed for RGBMatrix, Options, etc.
 #include "graphics.h"   // Graphics utilities - Needed for Color, Font, DrawText
 #include <unistd.h>     // For the sleep() function
@@ -81,13 +83,13 @@ int main() {
   matrix_options.cols = MATRIX_COLS;
   matrix_options.chain_length = MATRIX_CHAIN;
   matrix_options.parallel = MATRIX_PARALLEL;
-
+  matrix_options.limit_refresh_rate_hz = 100;
   // Set other common options
   matrix_options.brightness = MATRIX_BRIGHTNESS;
   matrix_options.hardware_mapping = HARDWARE_MAPPING;
   // matrix_options.pwm_lsb_nanoseconds = 130; // Example: uncomment to override default timing
   // matrix_options.show_refresh_rate = true; // Example: uncomment to show refresh rate
-
+  matrix_options.hardware_mapping = HARDWARE_MAPPING;
   // Configure runtime options
   // IMPORTANT: If running with sudo (required for hardware access), setting this
   // to true might cause issues trying to drop privileges unnecessarily.
@@ -130,11 +132,7 @@ offscreen_canvas->Fill(bg_color.r, bg_color.g, bg_color.b);
 
 rgb_matrix::DrawText(offscreen_canvas, font, x_pos, y_pos, text_color, nullptr, "Hello C++!", 0);
 
-// --- 8. Swap Canvas to Display ---
-// Atomically swaps the content of the offscreen canvas to the matrix display,
-// ideally synchronized with the refresh cycle to prevent tearing.
-// The matrix object takes ownership of the canvas passed here.
-// The function returns the *previous* canvas that was displayed (now offscreen).
+
 offscreen_canvas = matrix->SwapOnVSync(offscreen_canvas);
 std::cout << "Text drawn. Displaying until Ctrl+C is pressed..." << std::endl;
 
@@ -222,8 +220,22 @@ std::cout << "Text drawn. Displaying until Ctrl+C is pressed..." << std::endl;
     }
 
     curl_global_cleanup();
+    const int buffer_size = 100;
+    char time_str[buffer_size];
+    while (true) { 
+        std::time_t now = std::time(nullptr);
+        std::tm* local_time = std::localtime(&now);
+        std::cout << std::put_time(local_time, "%H:%M:%S") << std::endl;
+        std::strftime(time_str, buffer_size, "%H:%M:%S", local_time);
+    offscreen_canvas->Fill(bg_color.r, bg_color.g, bg_color.b);
+   // std::cout << value_random_1 << std::endl;
 
-
+    rgb_matrix::DrawText(offscreen_canvas, font, x_pos, y_pos, text_color, nullptr, time_str, 0);
+    
+    
+    offscreen_canvas = matrix->SwapOnVSync(offscreen_canvas);    
+    usleep(100000);
+    }
   // --- 10. Cleanup ---
   std::cout << "Cleaning up..." << std::endl;
   // Clear the matrix display (turn off all LEDs).
