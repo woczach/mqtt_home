@@ -31,16 +31,11 @@ const std::string INFLUXDB_URL = "http://192.168.0.230:8086"; // e.g., "http://1
 const std::string INFLUXDB_DATABASE = "heat"; // e.g., "telegraf" or "pi_sensors_db"
 const std::string INFLUXDB_USER = ""; // Optional: "your_influx_username" - leave empty if no auth
 const std::string INFLUXDB_PASSWORD = ""; // Optional: "your_influx_password" - leave empty if no auth
-// --- --- --- --- --- --- --- --- --- --- --- --
 
-// --- DEFINE YOUR INFLUXQL QUERY ---
-// NOTE: Remember to URL-encode the query string when adding it to the URL!
-// Example: Read the last 5 temperature readings from 'rpi_stats' measurement
+
 const std::string INFLUXQL_QUERY = "SELECT \"value\" FROM \"esp/sypialnia\" ORDER BY time DESC LIMIT 5";
-// --- --- --- --- --- --- --- --- --- ---
 
-// Callback function to handle the data received from curl
-// It appends the received data chunk to the user-provided string (readBuffer)
+
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb; // Tell curl how many bytes we handled
@@ -51,7 +46,7 @@ static void InterruptHandler(int signo) {
     interrupt_received = true; // Set the flag
   }
 
-// Function to URL-encode a string (needed for the query parameter)
+
 std::string url_encode(const std::string &value) {
     CURL *curl = curl_easy_init();
     std::string result = "";
@@ -74,21 +69,19 @@ int main() {
     long http_code = 0;
 
 
-  // These structs hold configuration for the matrix hardware and runtime behavior.
   rgb_matrix::RGBMatrix::Options matrix_options;
   rgb_matrix::RuntimeOptions runtime_options;
 
-  // Set required geometry options
   matrix_options.rows = MATRIX_ROWS;
   matrix_options.cols = MATRIX_COLS;
   matrix_options.chain_length = MATRIX_CHAIN;
   matrix_options.parallel = MATRIX_PARALLEL;
-  matrix_options.limit_refresh_rate_hz = 100;
+   matrix_options.limit_refresh_rate_hz = 75;
   // Set other common options
   matrix_options.brightness = MATRIX_BRIGHTNESS;
   matrix_options.hardware_mapping = HARDWARE_MAPPING;
   // matrix_options.pwm_lsb_nanoseconds = 130; // Example: uncomment to override default timing
-  // matrix_options.show_refresh_rate = true; // Example: uncomment to show refresh rate
+   matrix_options.show_refresh_rate = true; // Example: uncomment to show refresh rate
   matrix_options.hardware_mapping = HARDWARE_MAPPING;
   // Configure runtime options
   // IMPORTANT: If running with sudo (required for hardware access), setting this
@@ -114,8 +107,8 @@ int main() {
   // Success message
   std::cout << "Font loaded." << std::endl;
   // Define colors using RGB values (0-255)
-  rgb_matrix::Color text_color(0, 255, 0); // Green
-  rgb_matrix::Color bg_color(0, 0, 0);     // Black
+  rgb_matrix::Color text_color(0, 0, 0); // Green
+  rgb_matrix::Color bg_color(255, 255, 255);     // Black
 
   // Define text position (X, Y coordinate of the baseline)
   int x_pos = 2;                           // Starting X pixel
@@ -153,37 +146,20 @@ std::cout << "Text drawn. Displaying until Ctrl+C is pressed..." << std::endl;
 
         std::string full_url = INFLUXDB_URL + "/query?" + query_params;
         std::cout << "Query URL: " << full_url << std::endl; // Print URL for debugging (remove password in real apps)
-
-        // 2. Set CURL options
         curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
         curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); // Use GET request
-
-        // --- Authentication Option 2: Basic Auth (Often Preferred over URL params) ---
-        // If you prefer Basic Auth and INFLUXDB_USER is set:
-        // std::string userpwd = INFLUXDB_USER + ":" + INFLUXDB_PASSWORD;
-        // curl_easy_setopt(curl, CURLOPT_USERPWD, userpwd.c_str());
-        // Make sure you DON'T add u= & p= to the query_params if using this method.
-        // --- ----------------------------------------------------------------- ---
-
-        // Set the callback function to handle the response data
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        // Pass the 'readBuffer' string to the callback function
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
-        // Optional: Set a timeout
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L); // 15 seconds timeout
 
-        // Optional: Enable verbose output for debugging curl requests
-        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-        // 3. Perform the request
         res = curl_easy_perform(curl);
 
         // 4. Check for errors
         if(res != CURLE_OK) {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
         } else {
-            // Get the HTTP response code
+
             curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
             std::cout << "HTTP Response Code: " << http_code << std::endl;
 
@@ -192,20 +168,11 @@ std::cout << "Text drawn. Displaying until Ctrl+C is pressed..." << std::endl;
                 std::cout << readBuffer << std::endl;
                 std::cout << "-------------------------" << std::endl;
 
-                // **NEXT STEP:** Parse the JSON in 'readBuffer'
-                // The format is specific to InfluxDB's /query endpoint.
-                // You'll typically look for "results" -> [0] -> "series" -> [...] -> "columns" and "values".
-                // Using a JSON library like nlohmann/json is highly recommended here.
-                // Example: https://github.com/nlohmann/json
 
                     json jsonData = json::parse(readBuffer);
                     std::string value_random;
                    value_random = jsonData["results"][0]["series"][0]["values"][0][0];
                   std::cout << value_random << std::endl;
-
-
-
-
 
             } else {
                 std::cerr << "InfluxDB query failed. HTTP Status: " << http_code << std::endl;
@@ -234,7 +201,7 @@ std::cout << "Text drawn. Displaying until Ctrl+C is pressed..." << std::endl;
     
     
     offscreen_canvas = matrix->SwapOnVSync(offscreen_canvas);    
-    usleep(100000);
+    usleep(5000000);
     }
   // --- 10. Cleanup ---
   std::cout << "Cleaning up..." << std::endl;
