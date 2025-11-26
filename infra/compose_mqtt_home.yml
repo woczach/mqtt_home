@@ -1,0 +1,11 @@
+version: '1.0'
+
+#version: "3.9"
+services:
+  watcher:
+    image: grafana/grafana-enterprise:0.5
+    restart: unless-stopped
+services:
+  controller:
+    image: grafana/grafana-enterprise:0.5
+    restart: unless-stopped
