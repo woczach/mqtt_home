@@ -12,7 +12,7 @@ local function magictokens(txn)
     -------------------------------
     -- http://localhost:8080/realms/myrealm/protocol/openid-connect/token
 
-    client_id_and_secret = "Z3JhZmFuYTpoTnlvbFVEYTJBZ1pGQ0RJTXkyZ09rSGJNeFFRZGY2Mw=="
+    client_id_and_secret = "Z3JhZmFuYTpLTnBjZ0V0UzFOVXI2SXhxZjZNS2M2cmNDTXh3ckE5Sw=="
     realm = "master"
     token_endpoint = string.format("/realms/%s/protocol/openid-connect/token",realm)
     client_id="grafana"

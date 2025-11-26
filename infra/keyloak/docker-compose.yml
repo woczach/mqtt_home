@@ -1,10 +1,14 @@
 services:
   my-keycloak:
-    image: quay.io/keycloak/keycloak:24.0
+    image: quay.io/keycloak/keycloak:26.3
     environment:
-      KC_HOSTNAME: auth.purpucle.pl
-      KC_HOSTNAME_PORT: 7080
-#      KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+      KC_FEATURES: hostname:v2
+      KC_HOSTNAME: https://auth.purpucle.pl
+        #      KC_HOSTNAME_ADMIN_URL: https://auth.purpucle.pl 
+        # KC_HOSTNAME_PORT: 443
+        #     KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+        #KC_HOSTNAME_STRICT: "true"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: true
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: "true"

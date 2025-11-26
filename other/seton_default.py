@@ -19,7 +19,7 @@ def measurments_preparation_sent():
                 "JozefDayHour": float(21.2),
                 "JozefEveningHour": float(21.2),
                 "JozefNightHour": float(21.2),
-                "SalonMorningHour": float(22.0),
+                "SalonMorningHour": float(21.8),
                 "SalonDayHour": float(21.5),
                 "SalonEveningHour": float(21.8),
                 "SalonNightHour": float(21.5),

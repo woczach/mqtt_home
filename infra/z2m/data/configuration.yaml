@@ -36,6 +36,7 @@ advanced:
   homeassistant_legacy_entity_attributes: false
   legacy_api: false
   legacy_availability_payload: false
+  log_level: info
 device_options:
   legacy: false
 devices:
