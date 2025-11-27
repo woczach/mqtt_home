@@ -207,10 +207,10 @@ def regulate_temp():
 
         settings, time_of_day = return_current_settings()
 
-            
-        print(settings)
+        print(f'Time of day: {time_of_day}')   
+        print(f'settings: {settings}')
         current_temps = return_current_temps()
-        print(current_temps)
+        print(f'current temps {current_temps}')
         temp_diff = {}
         for pokoj, set_temp in settings.items():
             print(current_temps[pokoj][0])
@@ -224,6 +224,7 @@ def regulate_temp():
 
 def return_current_settings():
     current_time = datetime.now().time()
+    print(f'Current time: {current_time}')
     data = read_from_db('heat', 'time_measurement', connection, 1)
     points = list(data.get_points())
     data_point = points[0]
