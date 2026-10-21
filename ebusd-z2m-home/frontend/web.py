@@ -144,11 +144,22 @@ def api_status():
         log.exception('could not read last decision')
         last_decision = None
 
+    water_config = config['water']
+    override_until = float(water_config.get('override_until', 0) or 0)
+    water = {
+        'woda': float(water_config.get('woda', 0.0)),
+        'woda_off': float(water_config.get('woda_off', 0.0)),
+        'override_active': override_until > now.timestamp(),
+        'override_until': override_until,
+        'override_temp': float(water_config.get('override_temp', 55.0)),
+    }
+
     return flask.jsonify({
         'now': now.isoformat(),
         'max_sensor_age_s': max_age,
         'rooms': rooms,
         'boiler': boiler,
+        'water': water,
         'last_decision': last_decision,
     })
 

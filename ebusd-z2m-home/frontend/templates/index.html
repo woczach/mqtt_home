@@ -14,10 +14,12 @@
     h3 { margin: 18px 0 8px; font-size: 16px; }
     .hint { color: #5b6672; font-size: 13px; margin: 4px 0 12px; }
     nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-    nav.tabs button { border: 1px solid var(--line); background: #fff; padding: 9px 16px;
-                      border-radius: 8px; cursor: pointer; font-size: 14px; }
-    nav.tabs button.active { background: var(--accent); border-color: var(--accent);
-                             color: #fff; }
+    nav.tabs button { border: 1px solid #c7d0da; background-color: #ffffff; color: #1b1b1b;
+                      padding: 9px 16px; border-radius: 8px; cursor: pointer;
+                      font-size: 14px; }
+    nav.tabs button:hover { background-color: #eef2f6; }
+    nav.tabs button.active { background-color: #0b6bcb; border-color: #0b6bcb;
+                             color: #ffffff; }
     section.tab { display: none; background: #fff; border: 1px solid var(--line);
                   border-radius: 10px; padding: 18px; }
     section.tab.active { display: block; }
@@ -35,9 +37,15 @@
             margin-bottom: 12px; color: #39424c; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
             gap: 0 18px; }
-    button { border: 0; background: var(--accent); color: #fff; padding: 9px 18px;
-             border-radius: 7px; cursor: pointer; font-size: 14px; margin-top: 6px; }
-    button.secondary { background: #e4e9ef; color: #222; padding: 6px 11px; }
+    button { border: 1px solid #0b6bcb; background-color: #0b6bcb; color: #ffffff;
+             padding: 9px 18px; border-radius: 7px; cursor: pointer; font-size: 14px;
+             margin-top: 6px; }
+    button:hover { background-color: #0957a5; border-color: #0957a5; }
+    button.secondary { background-color: #e4e9ef; color: #1b1b1b; border-color: #c7d0da;
+                       padding: 6px 11px; }
+    button.secondary:hover { background-color: #d3dbe4; }
+    .button-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+                  margin: 8px 0 14px; }
     tr.stale td { background: #fde7e7; color: var(--bad); }
     .toast { position: fixed; right: 20px; top: 18px; max-width: 440px; padding: 11px 16px;
              border-radius: 8px; background: #1e7d32; color: #fff; opacity: 0;
@@ -52,18 +60,18 @@
 <div id="toast" class="toast"></div>
 <h1>Heating</h1>
 <nav class="tabs">
-    <button data-tab="schedule" class="active">Schedule</button>
+    <button data-tab="status" class="active">Status</button>
+    <button data-tab="schedule">Schedule</button>
     <button data-tab="controller">Controller</button>
     <button data-tab="water">Water</button>
     <button data-tab="rooms">Rooms</button>
-    <button data-tab="status">Status</button>
 </nav>
 <main>
-    <section id="tab-schedule" class="tab active"></section>
+    <section id="tab-status" class="tab active"></section>
+    <section id="tab-schedule" class="tab"></section>
     <section id="tab-controller" class="tab"></section>
     <section id="tab-water" class="tab"></section>
     <section id="tab-rooms" class="tab"></section>
-    <section id="tab-status" class="tab"></section>
 </main>
 <script>
 const PERIODS = ['Morning', 'Day', 'Evening', 'Night'];
@@ -277,6 +285,15 @@ function renderWater() {
                         'data-water-field');
     html += numberLabel('woda_off', 'Water setpoint (off)', water.woda_off,
                         'data-water-field');
+    html += '</div><h3>Water boost</h3><div class="button-row">';
+    html += '<button onclick="waterOverride()">Boost to 55°C for 30 min</button>';
+    const until = Number(water.override_until || 0);
+    if (until > Date.now() / 1000) {
+        html += '<button class="secondary" onclick="cancelWaterOverride()">' +
+                'Cancel boost</button>';
+        html += '<span class="ok">Active until ' +
+                esc(new Date(until * 1000).toLocaleTimeString()) + '</span>';
+    }
     html += '</div><h3>Water heating windows</h3>';
     html += '<p class="hint">Empty list means always on. Windows may span midnight.</p>';
     html += '<table><thead><tr><th>Start</th><th>End</th><th></th></tr></thead>' +
@@ -300,6 +317,26 @@ async function saveWater() {
         end: $('[data-water-end]', row).value
     }));
     await putConfig('water', values);
+}
+
+async function waterOverride() {
+    const until = Math.floor(Date.now() / 1000) + 30 * 60;
+    const ok = await putConfig('water', {
+        override_until: until,
+        override_temp: 55
+    });
+    if (ok) {
+        refreshStatus();
+        toast('Water boost active: 55°C for 30 min');
+    }
+}
+
+async function cancelWaterOverride() {
+    const ok = await putConfig('water', { override_until: 0 });
+    if (ok) {
+        refreshStatus();
+        toast('Water boost cancelled');
+    }
 }
 
 function renderRooms() {
@@ -351,6 +388,22 @@ function renderStatus(data) {
     html += '<p class="hint">Updated ' +
             esc(new Date(data.now).toLocaleString()) + '</p>';
 
+    const water = data.water || {};
+    html += '<h3>Water</h3><div class="button-row">';
+    html += '<button onclick="waterOverride()">Boost water to ' +
+            esc(water.override_temp || 55) + '°C for 30 min</button>';
+    if (water.override_active) {
+        html += '<button class="secondary" onclick="cancelWaterOverride()">' +
+                'Cancel boost</button>';
+        html += '<span class="ok">Override active until ' +
+                esc(new Date(Number(water.override_until) * 1000)
+                    .toLocaleTimeString()) + '</span>';
+    } else {
+        html += '<span class="hint">No override active (water setpoint ' +
+                esc(water.woda) + '°C)</span>';
+    }
+    html += '</div>';
+
     html += '<h3>Rooms</h3><table><thead><tr><th>Room</th><th>Temperature</th>' +
             '<th>Age</th><th>Measurement</th></tr></thead><tbody>';
     Object.keys(data.rooms || {}).forEach(room => {
@@ -373,8 +426,8 @@ function renderStatus(data) {
     const decision = data.last_decision;
     if (decision) {
         html += '<h3>Last decision</h3><table><tbody>';
-        ['time', 'period', 'settemp', 'piec_off', 'water_active', 'woda_temp',
-         'fallback_active', 'reason'].forEach(key => {
+        ['time', 'period', 'settemp', 'piec_off', 'water_active',
+         'water_override', 'woda_temp', 'fallback_active', 'reason'].forEach(key => {
             if (key in decision) {
                 html += '<tr><th>' + esc(key) + '</th><td>' + esc(decision[key]) +
                         '</td></tr>';
@@ -407,7 +460,7 @@ function renderStatus(data) {
     $('#tab-status').innerHTML = html;
 }
 
-loadConfig().catch(err => toast(String(err), true));
+loadConfig().then(() => refreshStatus()).catch(err => toast(String(err), true));
 setInterval(() => {
     if ($('#tab-status').classList.contains('active')) refreshStatus();
 }, 30000);

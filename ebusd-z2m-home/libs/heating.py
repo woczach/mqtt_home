@@ -220,10 +220,17 @@ def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
     else:
         reason = 'no heating demand (all rooms off or no diffs)'
 
-    water_active = is_now_in_windows(water_config.get('water_times', []), now)
     woda = float(water_config.get('woda', 42.0))
     woda_off = float(water_config.get('woda_off', 0.0))
-    woda_value = woda if water_active else woda_off
+    override_until = float(water_config.get('override_until', 0) or 0)
+    override_temp = float(water_config.get('override_temp', 55.0))
+    water_override = override_until > now.timestamp()
+    if water_override:
+        water_active = True
+        woda_value = override_temp
+    else:
+        water_active = is_now_in_windows(water_config.get('water_times', []), now)
+        woda_value = woda if water_active else woda_off
 
     return {
         'period': period,
@@ -238,6 +245,9 @@ def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
             'temp': woda_value,
             'woda': woda,
             'woda_off': woda_off,
+            'override': water_override,
+            'override_until': override_until,
+            'override_temp': override_temp,
         },
         'fallback_active': fallback_active,
         'reason': reason,

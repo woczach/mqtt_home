@@ -130,6 +130,8 @@ def decision_fields(decision, loop_number):
         'settemp': float(decision['boiler']['settemp']),
         'piec_off': int(decision['boiler']['piec_off']),
         'water_active': bool(decision['water']['active']),
+        'water_override': bool(decision['water'].get('override', False)),
+        'water_override_until': float(decision['water'].get('override_until', 0.0)),
         'woda_temp': float(decision['water']['temp']),
         'woda': float(decision['water'].get('woda', 0.0)),
         'woda_off': float(decision['water'].get('woda_off', 0.0)),

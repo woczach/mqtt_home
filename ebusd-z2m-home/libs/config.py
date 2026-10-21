@@ -76,6 +76,8 @@ WATER_DEFAULTS = {
     'woda': 42.0,
     'woda_off': 0.0,
     'water_times': json.dumps([]),
+    'override_temp': 55.0,
+    'override_until': 0.0,
 }
 
 DEFAULTS = {
@@ -169,7 +171,7 @@ def _normalize_section(section, values):
         return result
     if section == 'water':
         for key, value in values.items():
-            if key in ('woda', 'woda_off'):
+            if key in ('woda', 'woda_off', 'override_temp', 'override_until'):
                 result[key] = _as_float(value)
             elif key == 'water_times':
                 result[key] = json.dumps(_loads(value), sort_keys=True)
@@ -245,7 +247,7 @@ def validate_section(section, values):
 
     elif section == 'water':
         for key, value in values.items():
-            if key in ('woda', 'woda_off'):
+            if key in ('woda', 'woda_off', 'override_temp', 'override_until'):
                 try:
                     if _as_float(value) < 0:
                         errors.append(f'{key} must not be negative')
