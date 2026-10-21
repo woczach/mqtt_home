@@ -168,6 +168,31 @@ def write_decision(decision, loop_number):
         log.exception('could not write decision to InfluxDB')
 
 
+def settings_fields(decision):
+    """Legacy `settings` measurement kept for existing Grafana panels."""
+    fields: dict = {
+        'Heating_temp': (int(decision['boiler']['settemp'])
+                         if int(decision['boiler']['piec_off']) == 0 else 0),
+    }
+    for room, entry in decision['rooms'].items():
+        if entry.get('target') is not None:
+            fields[room] = float(entry['target'])
+    return fields
+
+
+def write_settings(decision):
+    if DRY_RUN:
+        return
+    point = [{
+        'measurement': 'settings',
+        'fields': settings_fields(decision),
+    }]
+    try:
+        push_to_db(DB_NAME, point, connection)
+    except Exception:
+        log.exception('could not write legacy settings to InfluxDB')
+
+
 def main():
     logging.basicConfig(
         level=os.environ.get('LOG_LEVEL', 'INFO').upper(),
@@ -227,6 +252,7 @@ def main():
         publish_valves(config, decision, last_valves, config_changed)
         last_override, _ = publish_boiler(decision, loop_number, last_override)
         write_decision(decision, loop_number)
+        write_settings(decision)
 
         time.sleep(interval)
 

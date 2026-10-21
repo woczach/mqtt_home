@@ -31,7 +31,7 @@ Personal home-automation / heating-control repo. No tests, lint, formatter, CI, 
 - Requires Python 3.10+ (`match`/`case` in `libs.measurments_preparation_sent`). Docker base is `python:3-slim-bookworm`.
 - Imports are `from libs import ...`; in the images the whole `libs/` package is copied to `/user/src/app/libs`. Running `readmeas.py` from a checkout does not resolve this the same way.
 - Runtime config lives in Influx measurement `config` (tag `section` ∈ {`schedule`, `controller`, `water`, `rooms`}). `config/schedule` is seeded once from the legacy `time_measurement` point. Room→measurement mapping and Zigbee addresses are in `config/rooms`.
-- Watcher watchdog re-requests any ebusd topic silent for 15 minutes (`EBUSD_SILENCE_TIMEOUT`, default 900 s) by publishing `?3` and requests all topics on MQTT connect. Controller writes each decision to measurement `decisions`.
+- Watcher watchdog re-requests any ebusd topic silent for 15 minutes (`EBUSD_SILENCE_TIMEOUT`, default 900 s) by publishing `?3` and requests all topics on MQTT connect. Controller writes each decision to measurement `decisions` and maintains the legacy `settings` measurement (`Heating_temp` + per-room valve targets) for existing Grafana panels.
 - Hardcoded/placeholder credentials throughout; env vars are only used in root `mqtt_home_pub.py`.
 - Generated files are committed (`**/__pycache__/*.pyc`, `heat.out`, `infra/z2m/data/*.db|*.json`).
 - `cpp_driver/build.sh` compiles `reciever_printer.cpp` against `/home/p/rpi-rgb-led-matrix`; `buc.sh` references `matrix_influx_c.c`, which does not exist.
