@@ -2,6 +2,8 @@ services:
   watcher:
     image: parasolnikov/watcher:0.7
     restart: unless-stopped
+    environment:
+      TZ: Europe/Warsaw
     healthcheck:
       test: ["CMD", "python", "-c", "import sys,time; sys.exit(0 if time.time() - int(open('/tmp/last_seen').read()) < 600 else 1)"]
       interval: 60s
@@ -12,9 +14,13 @@ services:
   controller:
     image: parasolnikov/controller:0.7
     restart: unless-stopped
+    environment:
+      TZ: Europe/Warsaw
 
   frontend:
     image: parasolnikov/frontend:0.7
     restart: unless-stopped
+    environment:
+      TZ: Europe/Warsaw
     ports:
       - "5002:5002"
