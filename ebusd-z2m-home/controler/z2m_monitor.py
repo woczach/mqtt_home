@@ -14,7 +14,9 @@ log = logging.getLogger('controller')
 BROKER = DEFAULT_BROKER
 PORT = DEFAULT_PORT
 BOILER_TOPIC = 'ebusd/BAI/SetModeOverride/set'
-BOILER_REPUBLISH_EVERY = 10
+# SetModeOverride is not held indefinitely by the boiler; re-assert every loop
+# (the old controller also published it every loop).
+BOILER_REPUBLISH_EVERY = 1
 DRY_RUN = os.environ.get('DRY_RUN', '').lower() in ('1', 'true', 'yes', 'on')
 
 _mqtt_client = None

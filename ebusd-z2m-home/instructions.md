@@ -252,7 +252,7 @@ Loop (`z2m_monitor.py`), every `loop_interval_s`:
 5. Boiler fallback: if NO valid room → do NOT change valve states; re-send last override
    or, if none, send `settemp_min` + `piec_off=0`; set `fallback_active` + reason.
 6. Only publish valve messages for rooms whose desired state CHANGED (or config changed);
-   always re-publish boiler override every N loops (N=10, i.e. ~20 min) to keep override alive.
+   re-publish the boiler override every loop (the boiler does not hold SetModeOverride indefinitely).
 7. Write each decision to Influx measurement `decisions` (fields: settemp, piec_off,
    water_active, woda_temp, per-room diff/stale flags, fallback_active) for Grafana/UI history.
 8. Keep Influx writes (`push_to_db`) with per-call client (current pattern works), but

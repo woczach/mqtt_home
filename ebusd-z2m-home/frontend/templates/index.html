@@ -101,6 +101,13 @@ function fmtAge(seconds) {
     return (seconds / 3600).toFixed(1) + ' h';
 }
 
+function storageTempColor(value) {
+    const temp = Number(value);
+    if (!Number.isFinite(temp)) return '';
+    const ratio = Math.max(0, Math.min(1, (temp - 37) / (42 - 37)));
+    return 'hsl(' + (220 - 220 * ratio).toFixed(0) + ', 80%, 42%)';
+}
+
 function toast(message, isError) {
     const node = $('#toast');
     node.textContent = message;
@@ -418,10 +425,16 @@ function renderStatus(data) {
             '<th>Age</th></tr></thead><tbody>';
     Object.keys(data.boiler || {}).forEach(name => {
         const info = data.boiler[name];
-        html += '<tr><th>' + esc(name) + '</th><td>' + esc(info.value) +
-                '</td><td>' + fmtAge(info.age_s) + '</td></tr>';
+        const style = name === 'StorageTemp'
+            ? ' style="color:' + storageTempColor(info.value) +
+              ';font-weight:700"'
+            : '';
+        html += '<tr><th>' + esc(name) + '</th><td' + style + '>' +
+                esc(info.value) + '</td><td>' + fmtAge(info.age_s) +
+                '</td></tr>';
     });
     html += '</tbody></table>';
+    html += '<p class="hint">StorageTemp scale: 37°C blue, 42°C red.</p>';
 
     const decision = data.last_decision;
     if (decision) {
