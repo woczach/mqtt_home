@@ -1,95 +1,157 @@
-from libs import push_to_db,read_from_db
+"""Schedule/config editor and status API."""
+
+import json
+import logging
+import os
+from datetime import datetime, timezone
+
 import flask
 
+from libs import (DB_NAME, DEFAULT_CONNECTION, SECTIONS, ConfigError,
+                  age_seconds, load_config, read_latest, save_config)
+
+logging.basicConfig(
+    level=os.environ.get('LOG_LEVEL', 'INFO').upper(),
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+)
+log = logging.getLogger('frontend')
+
+app = flask.Flask(__name__)
+connection = DEFAULT_CONNECTION
+
+BOILER_TOPICS = (
+    'FlowTemp', 'FlowTempDesired', 'HwcTemp', 'HwcTempDesired',
+    'StorageTemp', 'StorageTempDesired', 'WaterPressure', 'ReturnTemp',
+    'HeatingSwitch', 'HwcSwitch',
+)
 
 
-#requests.packages.urllib3.disable_warnings() 
-app = flask.Flask(__name__, static_folder='/app')
-
-def measurments_preparation_sent(temperature, field):
-    connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}   
-    Winter = 1
-
-    data_point = [
-            {
-                "measurement": "time_measurement",
-                "tags": {
-                "MorningHour": "05:50",
-                "DayHour": "06:45",
-                "EveningHour": "18:00",
-                "NightHour": "21:30"
-                },
-                "fields": {
-                "JozefMorningHour": float(21.2),
-                "JozefDayHour": float(20.5),
-                "JozefEveningHour": float(21.2),
-                "JozefNightHour": float(21.3),
-                "SalonMorningHour": float(22.3),
-                "SalonDayHour": float(21.8), 
-                "SalonEveningHour": float(21.8),
-                "SalonNightHour": float(0),
-                "SypialniaMorningHour": float(0),
-                "SypialniaDayHour": float(0),
-                "SypialniaEveningHour": float(22.5),
-                "SypialniaNightHour": float(22.5),
-                "KuchniaMorningHour": float(0),
-                "KuchniaDayHour": float(21),
-                "KuchniaEveningHour": float(21),
-                "KuchniaNightHour": float(0)
-                }
-            }
-            ]
-    data_point[0]['fields'][field] = temperature
-
-    #data = [{"measurement": "heat_setting", "fields": {'value': value}}]
-    push_to_db('heat', data_point, connection)         
-
-def get_data():
-    connection = {'URL': '192.168.0.230', 'PORT': 8086, "DBUSER": "username", "DBPASS": 'password'}      
-
-    #measurments_preparation_sent()
-    Daytimes = ['Morning', 'Day', 'Evening', 'Night']
-    Rooms = ['Jozef', 'Salon', 'Sypialnia', 'Kuchnia' ]
-    combinations = []
-    data = read_from_db('heat', 'time_measurement', connection, 1)
-    points = list(data.get_points())
-    data_point = points[0]
-    data = []
-    for room in Rooms:
-        line = []
-        for time in Daytimes:
-            key = f'{room}{time}Hour'
-            value = data_point.get(key)
-            line.append(value)
-            combinations.append(key)
-        data.append(line) 
-    print(combinations)        
-    
-    Daytimes.insert(0, "x") 
-    print(data)
-    return Daytimes, Rooms, data
+def _loads(value):
+    return json.loads(value) if isinstance(value, str) else value
 
 
-
-
-
-@app.route('/get',methods = ['GET'])
-def render_site():
-    Daytimes, Rooms, data = get_data()
-    return flask.render_template('site2.html', x_headers=Daytimes, y_headers=Rooms, data=data)
-
-
-@app.route('/post',methods = ['POST'])
-def setup_temp():
-    print("hello")
+def _max_sensor_age(config):
     try:
-        RoomTime = f"{flask.request.form['RoomTime']}Hour"
-        NewTemp = float(flask.request.form['NewTemp'])
-        print(f'{NewTemp} {RoomTime}')
-        measurments_preparation_sent(NewTemp, RoomTime)
-    except Exception as e: 
-        print(e)
-    return '200'
-    #print(server)
+        return float(config['controller'].get('max_sensor_age_s', 900))
+    except (TypeError, ValueError):
+        return 900.0
 
-app.run(host="0.0.0.0", port=5002)
+
+def _latest_measurement(measurement, value_name='value', now=None):
+    point = read_latest(DB_NAME, measurement, connection)
+    if not point:
+        return {'value': None, 'time': None, 'age_s': None}
+    return {
+        'value': point.get(value_name),
+        'time': point.get('time'),
+        'age_s': age_seconds(point.get('time'), now),
+    }
+
+
+@app.route('/')
+def index():
+    return flask.render_template('index.html')
+
+
+@app.route('/healthz')
+def healthz():
+    return flask.jsonify({'ok': True})
+
+
+@app.get('/api/config')
+def api_get_config():
+    try:
+        return flask.jsonify(load_config(connection))
+    except Exception as exc:
+        log.exception('could not read config')
+        return flask.jsonify({'error': str(exc)}), 500
+
+
+@app.put('/api/config')
+def api_put_config():
+    payload = flask.request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return flask.jsonify({'errors': ['request body must be a JSON object']}), 400
+
+    try:
+        if 'section' in payload:
+            values = payload.get('values', {})
+            if not isinstance(values, dict):
+                return flask.jsonify(
+                    {'errors': ['values must be an object']}), 400
+            save_config(connection, payload['section'], values)
+        else:
+            unknown = set(payload) - set(SECTIONS)
+            if unknown:
+                return flask.jsonify(
+                    {'errors': [f'unknown section(s): {sorted(unknown)}']}), 400
+            for section in SECTIONS:
+                if section in payload:
+                    values = payload[section]
+                    if not isinstance(values, dict):
+                        return flask.jsonify(
+                            {'errors': [f'{section} must be an object']}), 400
+                    save_config(connection, section, values)
+        return flask.jsonify(load_config(connection))
+    except ConfigError as exc:
+        log.warning('rejected config update: %s', exc.errors)
+        return flask.jsonify({'errors': exc.errors}), 400
+    except Exception as exc:
+        log.exception('could not save config')
+        return flask.jsonify({'error': str(exc)}), 500
+
+
+@app.get('/api/status')
+def api_status():
+    try:
+        config = load_config(connection)
+    except Exception as exc:
+        log.exception('could not read config for status')
+        return flask.jsonify({'error': str(exc)}), 500
+
+    now = datetime.now(timezone.utc)
+    max_age = _max_sensor_age(config)
+
+    rooms = {}
+    for room, raw in config['rooms'].items():
+        try:
+            room_config = _loads(raw)
+            measurement = room_config['measurement']
+            value_name = room_config.get('value_name', 'value')
+        except (TypeError, ValueError, KeyError):
+            log.exception('invalid room config for %s', room)
+            rooms[room] = {'measurement': None, 'value': None, 'time': None,
+                           'age_s': None, 'stale': True}
+            continue
+        latest = _latest_measurement(measurement, value_name, now)
+        age = latest['age_s']
+        rooms[room] = {
+            'measurement': measurement,
+            'value': latest['value'],
+            'time': latest['time'],
+            'age_s': age,
+            'stale': age is None or age > max_age,
+        }
+
+    boiler = {}
+    for name in BOILER_TOPICS:
+        latest = _latest_measurement(f'ebusd/bai/{name}', 'value', now)
+        boiler[name] = latest
+
+    try:
+        last_decision = read_latest(DB_NAME, 'decisions', connection)
+    except Exception:
+        log.exception('could not read last decision')
+        last_decision = None
+
+    return flask.jsonify({
+        'now': now.isoformat(),
+        'max_sensor_age_s': max_age,
+        'rooms': rooms,
+        'boiler': boiler,
+        'last_decision': last_decision,
+    })
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5002)

@@ -3,7 +3,7 @@ FROM python:3-slim-bookworm AS python-requirements-libs
 
 
 WORKDIR /user/src/app 
-COPY libs/libs.py . 
+COPY libs ./libs 
 COPY requirements.txt .
 RUN pip install -r requirements.txt --user 
 

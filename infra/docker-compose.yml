@@ -1,4 +1,5 @@
 include:
+  - compose_mqtt_home.yml
   - grafana.yaml
   - elastic.yaml
   - ebusdocker/ebusd.yml
