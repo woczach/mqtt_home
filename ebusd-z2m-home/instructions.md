@@ -255,8 +255,6 @@ Loop (`z2m_monitor.py`), every `loop_interval_s`:
    always re-publish boiler override every N loops (N=10, i.e. ~20 min) to keep override alive.
 7. Write each decision to Influx measurement `decisions` (fields: settemp, piec_off,
    water_active, woda_temp, per-room diff/stale flags, fallback_active) for Grafana/UI history.
-   Also keep writing the legacy `settings` measurement (`Heating_temp` integer + per-room
-   valve target floats) so existing Grafana panels keep working.
 8. Keep Influx writes (`push_to_db`) with per-call client (current pattern works), but
    wrap in try/except; never let DB errors kill the loop.
 
