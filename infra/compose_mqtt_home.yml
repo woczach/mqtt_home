@@ -1,6 +1,6 @@
 services:
   watcher:
-    image: parasolnikov/watcher:0.7
+    image: parasolnikov/watcher:0.8
     restart: unless-stopped
     environment:
       TZ: Europe/Warsaw
@@ -12,13 +12,13 @@ services:
       start_period: 120s
 
   controller:
-    image: parasolnikov/controller:0.7
+    image: parasolnikov/controller:0.8
     restart: unless-stopped
     environment:
       TZ: Europe/Warsaw
 
   frontend:
-    image: parasolnikov/frontend:0.7
+    image: parasolnikov/frontend:0.8
     restart: unless-stopped
     environment:
       TZ: Europe/Warsaw

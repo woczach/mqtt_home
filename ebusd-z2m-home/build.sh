@@ -2,14 +2,14 @@
 set -euo pipefail
 
 REGISTRY="${REGISTRY:-parasolnikov}"
-VERSION="${VERSION:-0.7}"
+VERSION="${VERSION:-0.8}"
 TARGETS="${TARGETS:-frontend controller watcher}"
 PUSH=true
 
 usage() {
     echo "Usage: $0 [--no-push] [--only=<target>[,<target>...]] [-v|--version <version>]"
     echo "Builds (and pushes) the multi-stage Dockerfile targets."
-    echo "Env overrides: REGISTRY (default: parasolnikov), VERSION (default: 0.7), TARGETS"
+    echo "Env overrides: REGISTRY (default: parasolnikov), VERSION (default: 0.8), TARGETS"
     echo "Example: $0                  # build + push all targets"
     echo "         $0 --no-push        # build only, no push"
     echo "         $0 --only=watcher   # build + push watcher only"

@@ -15,8 +15,8 @@ Personal home-automation / heating-control repo. No tests, lint, formatter, CI, 
 
 ## Build & deploy
 
-- Build/push images: `cd ebusd-z2m-home && ./build.sh` (pushes `parasolnikov/<target>:0.7` to Docker Hub; use `--no-push`, `--only=<target>`, `-v <version>`). Note the dir is spelled `controler` but the Docker target is `controller`.
-- Deploy: `cd infra && ./deploy.sh` (pull + `up -d` + `ps`); `./deploy.sh logs` streams the three app services. `infra/compose_mqtt_home.yml` pins `:0.7` with correct image names and includes the frontend.
+- Build/push images: `cd ebusd-z2m-home && ./build.sh` (pushes `parasolnikov/<target>:0.8` to Docker Hub; use `--no-push`, `--only=<target>`, `-v <version>`). Note the dir is spelled `controler` but the Docker target is `controller`.
+- Deploy: `cd infra && ./deploy.sh` (pull + `up -d` + `ps`); `./deploy.sh logs` streams the three app services. `infra/compose_mqtt_home.yml` pins `:0.8` with correct image names and includes the frontend.
 - ebusd config is mounted from an absolute host path `/root/mqtt_home/...`, so infra assumes the repo sits at `/root/mqtt_home`.
 
 ## Runtime topology (all IPs/creds are hardcoded)
