@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heating</title>
+<style>
+    :root { --line: #d7dce2; --accent: #0b6bcb; --bg: #f5f7fa; --bad: #c62828; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; font-family: system-ui, Arial, sans-serif;
+           background: var(--bg); color: #222; }
+    h1 { margin: 0 0 14px; font-size: 24px; }
+    h2 { margin: 0 0 12px; font-size: 20px; }
+    h3 { margin: 18px 0 8px; font-size: 16px; }
+    .hint { color: #5b6672; font-size: 13px; margin: 4px 0 12px; }
+    nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    nav.tabs button { border: 1px solid var(--line); background: #fff; padding: 9px 16px;
+                      border-radius: 8px; cursor: pointer; font-size: 14px; }
+    nav.tabs button.active { background: var(--accent); border-color: var(--accent);
+                             color: #fff; }
+    section.tab { display: none; background: #fff; border: 1px solid var(--line);
+                  border-radius: 10px; padding: 18px; }
+    section.tab.active { display: block; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 14px; }
+    th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left;
+             font-size: 14px; }
+    th { background: #f0f3f7; font-weight: 600; }
+    input, select, textarea { font: inherit; padding: 7px 8px; border: 1px solid var(--line);
+                              border-radius: 6px; background: #fff; }
+    input[type=number] { width: 100px; }
+    input[type=time] { width: 110px; }
+    input[data-room], input[data-room-field] { width: 100%; }
+    textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 13px; }
+    label { display: flex; flex-direction: column; gap: 5px; font-size: 13px;
+            margin-bottom: 12px; color: #39424c; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 0 18px; }
+    button { border: 0; background: var(--accent); color: #fff; padding: 9px 18px;
+             border-radius: 7px; cursor: pointer; font-size: 14px; margin-top: 6px; }
+    button.secondary { background: #e4e9ef; color: #222; padding: 6px 11px; }
+    tr.stale td { background: #fde7e7; color: var(--bad); }
+    .toast { position: fixed; right: 20px; top: 18px; max-width: 440px; padding: 11px 16px;
+             border-radius: 8px; background: #1e7d32; color: #fff; opacity: 0;
+             transition: opacity .2s; pointer-events: none; z-index: 10; font-size: 14px; }
+    .toast.show { opacity: 1; }
+    .toast.error { background: var(--bad); }
+    .ok { color: #1e7d32; font-weight: 600; }
+    .bad { color: var(--bad); font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<h1>Heating</h1>
+<nav class="tabs">
+    <button data-tab="schedule" class="active">Schedule</button>
+    <button data-tab="controller">Controller</button>
+    <button data-tab="water">Water</button>
+    <button data-tab="rooms">Rooms</button>
+    <button data-tab="status">Status</button>
+</nav>
+<main>
+    <section id="tab-schedule" class="tab active"></section>
+    <section id="tab-controller" class="tab"></section>
+    <section id="tab-water" class="tab"></section>
+    <section id="tab-rooms" class="tab"></section>
+    <section id="tab-status" class="tab"></section>
+</main>
+<script>
+const PERIODS = ['Morning', 'Day', 'Evening', 'Night'];
+const CTRL_NUM = ['valve_off_temp', 'valve_on_temp', 'settemp_min',
+                  'max_sensor_age_s', 'loop_interval_s'];
+let CONFIG = {};
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+function esc(value) {
+    return String(value === undefined || value === null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function parseJson(value, fallback) {
+    if (value === undefined || value === null || value === '') return fallback;
+    if (typeof value === 'object') return value;
+    try { return JSON.parse(value); } catch (err) { return fallback; }
+}
+
+function fmtAge(seconds) {
+    if (seconds === null || seconds === undefined) return 'never';
+    if (seconds < 60) return Math.round(seconds) + ' s';
+    if (seconds < 3600) return Math.round(seconds / 60) + ' min';
+    return (seconds / 3600).toFixed(1) + ' h';
+}
+
+function toast(message, isError) {
+    const node = $('#toast');
+    node.textContent = message;
+    node.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => { node.className = 'toast'; }, 4000);
+}
+
+function showTab(name) {
+    $$('nav.tabs button').forEach(btn =>
+        btn.classList.toggle('active', btn.dataset.tab === name));
+    $$('section.tab').forEach(section =>
+        section.classList.toggle('active', section.id === 'tab-' + name));
+    if (name === 'status') refreshStatus();
+}
+
+$$('nav.tabs button').forEach(btn =>
+    btn.addEventListener('click', () => showTab(btn.dataset.tab)));
+
+async function loadConfig() {
+    const response = await fetch('/api/config');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'could not load config');
+    CONFIG = data;
+    renderAll();
+}
+
+async function putConfig(section, values) {
+    try {
+        const response = await fetch('/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ section: section, values: values })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            toast((data.errors || [data.error || 'request failed']).join('; '), true);
+            return false;
+        }
+        CONFIG = data;
+        renderAll();
+        toast(section + ' saved');
+        return true;
+    } catch (err) {
+        toast(String(err), true);
+        return false;
+    }
+}
+
+function renderAll() {
+    renderSchedule();
+    renderController();
+    renderWater();
+    renderRooms();
+}
+
+function collectFields(root) {
+    const values = {};
+    $$('[data-field]', root).forEach(input => {
+        values[input.dataset.field] = input.type === 'number'
+            ? parseFloat(input.value || '0') : input.value;
+    });
+    return values;
+}
+
+function renderSchedule() {
+    const schedule = CONFIG.schedule || {};
+    const rooms = Object.keys(CONFIG.rooms || {});
+    let html = '<h2>Schedule</h2>';
+    html += '<p class="hint">0 = room off. Period start times use HH:MM.</p>';
+    html += '<table><thead><tr><th>Room</th>';
+    PERIODS.forEach(period => { html += '<th>' + period + '</th>'; });
+    html += '</tr></thead><tbody>';
+    rooms.forEach(room => {
+        html += '<tr><th>' + esc(room) + '</th>';
+        PERIODS.forEach(period => {
+            const key = room + period + 'Hour';
+            html += '<td><input type="number" step="0.1" min="0" data-field="' +
+                    esc(key) + '" value="' + esc(schedule[key]) + '"></td>';
+        });
+        html += '</tr>';
+    });
+    html += '<tr><th>Period starts</th>';
+    PERIODS.forEach(period => {
+        const key = period + 'Hour';
+        html += '<td><input type="time" data-field="' + esc(key) + '" value="' +
+                esc(schedule[key]) + '"></td>';
+    });
+    html += '</tr></tbody></table>';
+    html += '<button onclick="saveSchedule()">Save schedule</button>';
+    $('#tab-schedule').innerHTML = html;
+}
+
+async function saveSchedule() {
+    await putConfig('schedule', collectFields($('#tab-schedule')));
+}
+
+function numberLabel(field, label, value, attr) {
+    return '<label>' + esc(label) + '<input type="number" step="0.1" ' + attr +
+           '="' + esc(field) + '" value="' + esc(value) + '"></label>';
+}
+
+function renderController() {
+    const controller = CONFIG.controller || {};
+    const rooms = Object.keys(CONFIG.rooms || {});
+    let html = '<h2>Controller</h2><div class="grid">';
+    html += numberLabel('valve_off_temp', 'Valve closed temperature',
+                        controller.valve_off_temp, 'data-cfield');
+    html += numberLabel('valve_on_temp', 'Valve open temperature',
+                        controller.valve_on_temp, 'data-cfield');
+    html += numberLabel('settemp_min', 'Fallback boiler setpoint',
+                        controller.settemp_min, 'data-cfield');
+    html += numberLabel('max_sensor_age_s', 'Max sensor age (seconds)',
+                        controller.max_sensor_age_s, 'data-cfield');
+    html += numberLabel('loop_interval_s', 'Loop interval (seconds)',
+                        controller.loop_interval_s, 'data-cfield');
+    html += '<label>Fallback mode<select data-cfield="fallback_mode">';
+    ['skip', 'safe', 'hold'].forEach(mode => {
+        html += '<option value="' + mode + '"' +
+                (controller.fallback_mode === mode ? ' selected' : '') + '>' +
+                mode + '</option>';
+    });
+    html += '</select></label>';
+    html += '<label>Room priority<select data-cfield="room_priority">';
+    rooms.forEach(room => {
+        html += '<option value="' + esc(room) + '"' +
+                (controller.room_priority === room ? ' selected' : '') + '>' +
+                esc(room) + '</option>';
+    });
+    html += '</select></label></div>';
+    html += '<label>podiff (threshold:settemp JSON)<textarea rows="5" ' +
+            'data-cfield="podiff">' +
+            esc(JSON.stringify(parseJson(controller.podiff, {}), null, 2)) +
+            '</textarea></label>';
+    html += '<label>jodiff (threshold:settemp JSON)<textarea rows="5" ' +
+            'data-cfield="jodiff">' +
+            esc(JSON.stringify(parseJson(controller.jodiff, {}), null, 2)) +
+            '</textarea></label>';
+    html += '<button onclick="saveController()">Save controller</button>';
+    $('#tab-controller').innerHTML = html;
+}
+
+async function saveController() {
+    const values = {};
+    let failed = false;
+    $$('[data-cfield]', $('#tab-controller')).forEach(input => {
+        if (failed) return;
+        if (input.type === 'number') {
+            values[input.dataset.cfield] = parseFloat(input.value || '0');
+        } else if (input.tagName === 'TEXTAREA') {
+            try {
+                values[input.dataset.cfield] = JSON.parse(input.value);
+            } catch (err) {
+                toast('Invalid JSON in ' + input.dataset.cfield, true);
+                failed = true;
+            }
+        } else {
+            values[input.dataset.cfield] = input.value;
+        }
+    });
+    if (!failed) await putConfig('controller', values);
+}
+
+function waterCells(start, end) {
+    return '<td><input type="time" data-water-start value="' + esc(start || '00:00') +
+           '"></td><td><input type="time" data-water-end value="' + esc(end || '00:00') +
+           '"></td><td><button class="secondary" onclick="this.closest(\'tr\').remove()">' +
+           'Remove</button></td>';
+}
+
+function addWaterRow() {
+    const row = document.createElement('tr');
+    row.innerHTML = waterCells('05:00', '16:00');
+    $('#water-rows').appendChild(row);
+}
+
+function renderWater() {
+    const water = CONFIG.water || {};
+    const windows = parseJson(water.water_times, []);
+    let html = '<h2>Water</h2><div class="grid">';
+    html += numberLabel('woda', 'Water setpoint (active)', water.woda,
+                        'data-water-field');
+    html += numberLabel('woda_off', 'Water setpoint (off)', water.woda_off,
+                        'data-water-field');
+    html += '</div><h3>Water heating windows</h3>';
+    html += '<p class="hint">Empty list means always on. Windows may span midnight.</p>';
+    html += '<table><thead><tr><th>Start</th><th>End</th><th></th></tr></thead>' +
+            '<tbody id="water-rows">';
+    windows.forEach(window => {
+        html += '<tr>' + waterCells(window.start, window.end) + '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '<button class="secondary" onclick="addWaterRow()">Add window</button> ';
+    html += '<button onclick="saveWater()">Save water</button>';
+    $('#tab-water').innerHTML = html;
+}
+
+async function saveWater() {
+    const values = {};
+    $$('[data-water-field]', $('#tab-water')).forEach(input => {
+        values[input.dataset.waterField] = parseFloat(input.value || '0');
+    });
+    values.water_times = $$('#water-rows tr').map(row => ({
+        start: $('[data-water-start]', row).value,
+        end: $('[data-water-end]', row).value
+    }));
+    await putConfig('water', values);
+}
+
+function renderRooms() {
+    const rooms = CONFIG.rooms || {};
+    let html = '<h2>Rooms</h2>';
+    html += '<p class="hint">Maps each room to its Influx measurement, value field ' +
+            'and Zigbee2MQTT device address.</p>';
+    html += '<table><thead><tr><th>Room</th><th>Measurement</th><th>Value name</th>' +
+            '<th>Zigbee address</th></tr></thead><tbody>';
+    Object.keys(rooms).forEach(room => {
+        const config = parseJson(rooms[room], {});
+        html += '<tr><th>' + esc(room) + '</th>';
+        ['measurement', 'value_name', 'zigbee'].forEach(field => {
+            html += '<td><input data-room="' + esc(room) + '" data-room-field="' +
+                    field + '" value="' + esc(config[field]) + '"></td>';
+        });
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '<button onclick="saveRooms()">Save rooms</button>';
+    $('#tab-rooms').innerHTML = html;
+}
+
+async function saveRooms() {
+    const values = {};
+    $$('[data-room]', $('#tab-rooms')).forEach(input => {
+        const room = input.dataset.room;
+        if (!values[room]) values[room] = {};
+        values[room][input.dataset.roomField] = input.value;
+    });
+    await putConfig('rooms', values);
+}
+
+async function refreshStatus() {
+    try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'could not load status');
+        renderStatus(data);
+    } catch (err) {
+        $('#tab-status').innerHTML = '<h2>Status</h2><p class="bad">' +
+            esc(String(err)) + '</p>';
+    }
+}
+
+function renderStatus(data) {
+    let html = '<h2>Status <button class="secondary" onclick="refreshStatus()">' +
+               'Refresh</button></h2>';
+    html += '<p class="hint">Updated ' +
+            esc(new Date(data.now).toLocaleString()) + '</p>';
+
+    html += '<h3>Rooms</h3><table><thead><tr><th>Room</th><th>Temperature</th>' +
+            '<th>Age</th><th>Measurement</th></tr></thead><tbody>';
+    Object.keys(data.rooms || {}).forEach(room => {
+        const info = data.rooms[room];
+        html += '<tr class="' + (info.stale ? 'stale' : '') + '"><th>' + esc(room) +
+                '</th><td>' + esc(info.value) + '</td><td>' + fmtAge(info.age_s) +
+                '</td><td>' + esc(info.measurement) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+
+    html += '<h3>Boiler / ebusd</h3><table><thead><tr><th>Value</th><th>Reading</th>' +
+            '<th>Age</th></tr></thead><tbody>';
+    Object.keys(data.boiler || {}).forEach(name => {
+        const info = data.boiler[name];
+        html += '<tr><th>' + esc(name) + '</th><td>' + esc(info.value) +
+                '</td><td>' + fmtAge(info.age_s) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+
+    const decision = data.last_decision;
+    if (decision) {
+        html += '<h3>Last decision</h3><table><tbody>';
+        ['time', 'period', 'settemp', 'piec_off', 'water_active', 'woda_temp',
+         'fallback_active', 'reason'].forEach(key => {
+            if (key in decision) {
+                html += '<tr><th>' + esc(key) + '</th><td>' + esc(decision[key]) +
+                        '</td></tr>';
+            }
+        });
+        html += '</tbody></table>';
+
+        const rooms = new Set();
+        Object.keys(decision).forEach(key => {
+            const match = key.match(/^(.+)_action$/);
+            if (match) rooms.add(match[1]);
+        });
+        if (rooms.size) {
+            html += '<table><thead><tr><th>Room</th><th>Temp</th><th>Age</th>' +
+                    '<th>Setpoint</th><th>Diff</th><th>Stale</th><th>Action</th>' +
+                    '</tr></thead><tbody>';
+            rooms.forEach(room => {
+                html += '<tr class="' + (decision[room + '_stale'] ? 'stale' : '') +
+                        '"><th>' + esc(room) + '</th><td>' +
+                        esc(decision[room + '_temp']) + '</td><td>' +
+                        fmtAge(decision[room + '_age_s']) + '</td><td>' +
+                        esc(decision[room + '_setpoint']) + '</td><td>' +
+                        esc(decision[room + '_diff']) + '</td><td>' +
+                        (decision[room + '_stale'] ? 'yes' : 'no') + '</td><td>' +
+                        esc(decision[room + '_action']) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+        }
+    }
+    $('#tab-status').innerHTML = html;
+}
+
+loadConfig().catch(err => toast(String(err), true));
+setInterval(() => {
+    if ($('#tab-status').classList.contains('active')) refreshStatus();
+}, 30000);
+</script>
+</body>
+</html>
