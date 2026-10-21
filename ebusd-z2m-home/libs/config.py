@@ -315,8 +315,24 @@ def read_section(section, connection=None):
     if not points:
         return None
     point = points[0]
-    return {key: value for key, value in point.items()
-            if key not in ('time', 'section', 'measurement')}
+    allowed = _allowed_fields(section)
+    if allowed is None:
+        # Rooms have dynamic names; exclude keys that belong to other sections.
+        excluded = (TIME_FIELDS | SCHEDULE_ROOM_FIELDS
+                    | set(CONTROLLER_DEFAULTS) | set(WATER_DEFAULTS))
+    else:
+        excluded = set()
+
+    result = {}
+    for key, value in point.items():
+        if value is None or key in ('time', 'section', 'measurement'):
+            continue
+        if allowed is not None and key not in allowed:
+            continue
+        if key in excluded:
+            continue
+        result[key] = value
+    return result
 
 
 def _seed_schedule(connection):

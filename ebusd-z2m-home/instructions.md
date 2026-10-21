@@ -200,7 +200,7 @@ Requirements:
 - Exact topic matching: extract last segment of `msg.topic` (e.g. `FlowTemp` from
   `ebusd/bai/FlowTemp`) and look up in dict. `FlowTempDesired` must NOT reset `FlowTemp`.
 - Watchdog thread: per-topic `last_seen` = `time.monotonic()`, updated in `on_message`.
-  Every 10 s check: if `now - last_seen > 5*60` → publish `?3` to that topic's `/get`
+  Every 10 s check: if `now - last_seen > 15*60` (override with `EBUSD_SILENCE_TIMEOUT`) → publish `?3` to that topic's `/get`
   (exponential backoff, max 1 retry per 60 s per topic, log each retry).
 - **Self-heal / restart policy** (the "stuck" fix):
   - `on_disconnect` → paho auto-reconnects; if disconnected > 60 s, log loudly.
@@ -215,7 +215,7 @@ Requirements:
   healthcheck tests `[ $(date +%s) -lt $(cat /tmp/last_seen)+600 ]`).
 - Logging: `logging` module, INFO/ERROR levels, timestamps (helps debugging stuck state).
 
-Acceptance: stop ebusd container → after 5 min watcher logs retries; start ebusd → data
+Acceptance: stop ebusd container → after 15 min watcher logs retries; start ebusd → data
 resumes within 10 s. Kill broker → watcher logs disconnect, reconnects on broker up.
 `docker kill` watcher → compose restarts it.
 
