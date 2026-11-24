@@ -18,7 +18,7 @@ services:
 
       # Use DEV as eBUS device ("enh:DEVICE" or "enh:IP:PORT" for enhanced device, "ens:DEVICE" for enhanced high speed
       # serial device, "DEVICE" for serial device, or "[udp:]IP:PORT" for network device)
-      EBUSD_DEVICE: "192.168.0.221:9999"
+      EBUSD_DEVICE: "192.168.0.231:9999"
       # Skip serial eBUS device test
       #EBUSD_NODEVICECHECK: ""
       # Only read from device, never write to it
