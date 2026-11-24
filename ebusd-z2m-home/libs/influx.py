@@ -102,6 +102,8 @@ def measurments_preparation_sent(topic, type, body, connection=None):
             value = float(body.decode().split(';')[0])
         case 'int':
             value = body.decode()
+        case 'integer':
+            value = int(body.decode())
         case 'onoff':
             value = 1 if body.decode() == 'on' else 0
         case _:

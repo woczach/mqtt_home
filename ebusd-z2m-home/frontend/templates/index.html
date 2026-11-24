@@ -35,6 +35,8 @@
     textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 13px; }
     label { display: flex; flex-direction: column; gap: 5px; font-size: 13px;
             margin-bottom: 12px; color: #39424c; }
+    label.check { flex-direction: row; align-items: center; gap: 8px; }
+    input[type=checkbox] { width: auto; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
             gap: 0 18px; }
     button { border: 1px solid #0b6bcb; background-color: #0b6bcb; color: #ffffff;
@@ -76,7 +78,8 @@
 <script>
 const PERIODS = ['Morning', 'Day', 'Evening', 'Night'];
 const CTRL_NUM = ['valve_off_temp', 'valve_on_temp', 'settemp_min',
-                  'max_sensor_age_s', 'loop_interval_s'];
+                  'max_sensor_age_s', 'loop_interval_s', 'curve_max_age_s',
+                  'curve_trim_k', 'curve_trim_max', 'curve_off_temp'];
 let CONFIG = {};
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -237,12 +240,35 @@ function renderController() {
                 (controller.room_priority === room ? ' selected' : '') + '>' +
                 esc(room) + '</option>';
     });
-    html += '</select></label></div>';
-    html += '<label>podiff (threshold:settemp JSON)<textarea rows="5" ' +
+    html += '</select></label>';
+    html += '<label class="check"><input type="checkbox" data-cfield="curve_enabled"' +
+            (controller.curve_enabled ? ' checked' : '') +
+            '> Weather compensation (outdoor curve)</label>';
+    html += '<label>Outdoor measurement<input type="text" data-cfield="outdoor_measurement" value="' +
+            esc(controller.outdoor_measurement) + '"></label>';
+    html += '<label>Outdoor field<input type="text" data-cfield="outdoor_field" value="' +
+            esc(controller.outdoor_field) + '"></label>';
+    html += numberLabel('curve_max_age_s', 'Outdoor max age (seconds)',
+                        controller.curve_max_age_s, 'data-cfield');
+    html += numberLabel('curve_off_temp', 'Curve-only heating above outdoor (°C)',
+                        controller.curve_off_temp, 'data-cfield');
+    html += numberLabel('curve_trim_k', 'Room trim (°C per °C)',
+                        controller.curve_trim_k, 'data-cfield');
+    html += numberLabel('curve_trim_max', 'Room trim limit (°C)',
+                        controller.curve_trim_max, 'data-cfield');
+    html += '</div>';
+    html += '<label>curve (outdoor:settemp JSON)<textarea rows="7" ' +
+            'data-cfield="curve">' +
+            esc(JSON.stringify(parseJson(controller.curve, {}), null, 2)) +
+            '</textarea></label>';
+    html += '<p class="hint">The curve sets the boiler flow temperature from the ' +
+            'outdoor reading; the rooms still decide whether the boiler runs ' +
+            '(piec_off) and can trim the curve by the configured amount.</p>';
+    html += '<label>podiff (threshold:settemp JSON, fallback)<textarea rows="5" ' +
             'data-cfield="podiff">' +
             esc(JSON.stringify(parseJson(controller.podiff, {}), null, 2)) +
             '</textarea></label>';
-    html += '<label>jodiff (threshold:settemp JSON)<textarea rows="5" ' +
+    html += '<label>jodiff (threshold:settemp JSON, fallback)<textarea rows="5" ' +
             'data-cfield="jodiff">' +
             esc(JSON.stringify(parseJson(controller.jodiff, {}), null, 2)) +
             '</textarea></label>';
@@ -255,7 +281,9 @@ async function saveController() {
     let failed = false;
     $$('[data-cfield]', $('#tab-controller')).forEach(input => {
         if (failed) return;
-        if (input.type === 'number') {
+        if (input.type === 'checkbox') {
+            values[input.dataset.cfield] = input.checked;
+        } else if (input.type === 'number') {
             values[input.dataset.cfield] = parseFloat(input.value || '0');
         } else if (input.tagName === 'TEXTAREA') {
             try {
@@ -421,6 +449,20 @@ function renderStatus(data) {
     });
     html += '</tbody></table>';
 
+    const outdoor = data.outdoor || {};
+    html += '<h3>Outdoor</h3><table><tbody>';
+    html += '<tr class="' + (outdoor.fresh ? '' : 'stale') + '"><th>Temperature</th><td>' +
+            esc(outdoor.value) + '</td></tr>';
+    html += '<tr><th>Age</th><td>' + fmtAge(outdoor.age_s) + '</td></tr>';
+    html += '<tr><th>Source</th><td>' + esc(outdoor.measurement) + ' / ' +
+            esc(outdoor.field) + '</td></tr>';
+    html += '<tr><th>Curve</th><td>' +
+            (!outdoor.enabled ? 'disabled'
+                : (outdoor.fresh ? 'using outdoor reading'
+                                 : 'stale — falls back to room tables')) +
+            '</td></tr>';
+    html += '</tbody></table>';
+
     html += '<h3>Boiler / ebusd</h3><table><thead><tr><th>Value</th><th>Reading</th>' +
             '<th>Age</th></tr></thead><tbody>';
     Object.keys(data.boiler || {}).forEach(name => {
@@ -440,7 +482,8 @@ function renderStatus(data) {
     if (decision) {
         html += '<h3>Last decision</h3><table><tbody>';
         ['time', 'period', 'settemp', 'piec_off', 'water_active',
-         'water_override', 'woda_temp', 'fallback_active', 'reason'].forEach(key => {
+         'water_override', 'woda_temp', 'fallback_active', 'outdoor_temp',
+         'curve_active', 'curve_settemp', 'curve_trim', 'reason'].forEach(key => {
             if (key in decision) {
                 html += '<tr><th>' + esc(key) + '</th><td>' + esc(decision[key]) +
                         '</td></tr>';

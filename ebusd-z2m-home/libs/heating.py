@@ -7,6 +7,7 @@ from datetime import datetime, time
 log = logging.getLogger(__name__)
 
 PERIODS = ('Morning', 'Day', 'Evening', 'Night')
+MAX_BOILER_SETTEMP = 75.0
 
 
 def parse_hhmm(value):
@@ -70,7 +71,7 @@ def parse_thresholds(table):
             try:
                 result[float(key)] = float(value)
             except (TypeError, ValueError):
-                log.warning('ignoring invalid diff entry %r: %r', key, value)
+                log.warning('ignoring invalid table entry %r: %r', key, value)
     elif isinstance(table, list):
         for item in table:
             if not isinstance(item, dict):
@@ -80,6 +81,43 @@ def parse_thresholds(table):
             except (KeyError, TypeError, ValueError):
                 continue
     return result
+
+
+def curve_settemp(table, t_out, t_min=None, t_max=None):
+    """Interpolate a weather curve {outdoor: settemp}. None when unusable."""
+    if t_out is None:
+        return None
+    points = parse_thresholds(table)
+    if not points:
+        return None
+    temperatures = sorted(points)
+    if len(temperatures) == 1 or t_out <= temperatures[0]:
+        value = points[temperatures[0]]
+    elif t_out >= temperatures[-1]:
+        value = points[temperatures[-1]]
+    else:
+        value = points[temperatures[-1]]
+        for low, high in zip(temperatures, temperatures[1:]):
+            if low <= t_out <= high:
+                span = high - low
+                ratio = (t_out - low) / span if span else 0.0
+                value = points[low] + ratio * (points[high] - points[low])
+                break
+    if t_min is not None:
+        value = max(value, float(t_min))
+    if t_max is not None:
+        value = min(value, float(t_max))
+    return value
+
+
+def _truthy(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in ('1', 'true', 'yes', 'on')
+    return False
 
 
 def _fmt(value):
@@ -107,7 +145,7 @@ def _entry(setpoint, temp=None, age_s=None, stale=True):
 
 
 def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
-           water_config=None, now=None):
+           water_config=None, now=None, outdoor=None):
     """Compute valve/boiler decisions without touching MQTT or InfluxDB.
 
     schedule_for_now: (period, {room: setpoint}) as returned by config.schedule_for_now
@@ -115,10 +153,12 @@ def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
     latest_temps:     {room: {'value': float|None, 'age_s': float|None}}
     controller_config: controller section (dict)
     water_config:     water section (dict) - defaults to always-on DHW
+    outdoor:          {'value': float|None, 'age_s': float|None} outside temperature
     """
     now = now or datetime.now()
     controller_config = controller_config or {}
     water_config = water_config or {}
+    outdoor = outdoor or {}
 
     if isinstance(schedule_for_now, (tuple, list)) and len(schedule_for_now) == 2:
         period, setpoints = schedule_for_now
@@ -134,6 +174,23 @@ def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
     on_temp = float(controller_config.get('valve_on_temp', 24.0))
     settemp_min = float(controller_config.get('settemp_min', 40))
     room_priority = controller_config.get('room_priority', 'Jozef')
+
+    curve_enabled = _truthy(controller_config.get('curve_enabled', False))
+    curve_max_age = float(controller_config.get('curve_max_age_s', 3600))
+    curve_trim_k = float(controller_config.get('curve_trim_k', 3.0))
+    curve_trim_max = float(controller_config.get('curve_trim_max', 5.0))
+    curve_off_temp = float(controller_config.get('curve_off_temp', 15.0))
+    curve_table = parse_thresholds(controller_config.get('curve', {}))
+
+    t_out = outdoor.get('value')
+    t_out_age = outdoor.get('age_s')
+    outdoor_fresh = (t_out is not None and t_out_age is not None
+                     and float(t_out_age) <= curve_max_age)
+    curve_active = (curve_enabled and outdoor_fresh
+                    and len(curve_table) >= 2)
+    curve_base = (curve_settemp(curve_table, t_out, t_min=settemp_min,
+                                t_max=MAX_BOILER_SETTEMP)
+                  if curve_active else None)
 
     rooms = {}
     diffs = {}
@@ -195,10 +252,19 @@ def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
     fallback_active = not fresh_rooms
     settemp = settemp_min
     piec_off = 1
+    trim = 0.0
 
     if fallback_active:
-        piec_off = 0
-        reason = 'fallback: no fresh sensor data'
+        # No usable room feedback: fall back to the outdoor curve when it is
+        # available, otherwise keep the legacy safe default (boiler enabled at
+        # settemp_min so the TRV thermostats cannot freeze the house).
+        if curve_active:
+            settemp = min(MAX_BOILER_SETTEMP, curve_base)
+            piec_off = 0 if t_out < curve_off_temp else 1
+            reason = 'fallback: no fresh room data, outdoor curve only'
+        else:
+            piec_off = 0
+            reason = 'fallback: no fresh sensor data'
         for room, entry in rooms.items():
             if fallback_mode == 'safe':
                 entry.update(valve='open', target=on_temp, action='open')
@@ -209,15 +275,28 @@ def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
         smallest_value = diffs[smallest_room]
         if smallest_value < 0:
             piec_off = 0
-            table_key = 'jodiff' if smallest_room == room_priority else 'podiff'
-            thresholds = parse_thresholds(controller_config.get(table_key, {}))
-            matching = [threshold for threshold in thresholds if smallest_value < threshold]
-            if matching:
-                settemp = float(thresholds[min(matching)])
-            reason = f'heating requested by {smallest_room} (diff {smallest_value:.2f})'
+            if curve_active:
+                mean_diff = sum(diffs.values()) / len(diffs)
+                trim = max(-curve_trim_max,
+                           min(curve_trim_max, curve_trim_k * -mean_diff))
+                settemp = min(MAX_BOILER_SETTEMP,
+                              max(settemp_min, curve_base + trim))
+                reason = (f'heating requested by {smallest_room} '
+                          f'(diff {smallest_value:.2f}), curve '
+                          f'{curve_base:.1f} trim {trim:+.1f}')
+            else:
+                table_key = 'jodiff' if smallest_room == room_priority else 'podiff'
+                thresholds = parse_thresholds(controller_config.get(table_key, {}))
+                matching = [threshold for threshold in thresholds
+                            if smallest_value < threshold]
+                if matching:
+                    settemp = float(thresholds[min(matching)])
+                reason = f'heating requested by {smallest_room} (diff {smallest_value:.2f})'
         else:
+            settemp = curve_base if curve_active else settemp_min
             reason = 'all rooms at or above their setpoint'
     else:
+        settemp = curve_base if curve_active else settemp_min
         reason = 'no heating demand (all rooms off or no diffs)'
 
     woda = float(water_config.get('woda', 42.0))
@@ -253,10 +332,20 @@ def decide(schedule_for_now, rooms_config, latest_temps, controller_config,
         'reason': reason,
         'valid_rooms': valid_rooms,
         'stale_rooms': stale_rooms,
+        'outdoor': {
+            'temp': t_out,
+            'age_s': t_out_age,
+            'fresh': outdoor_fresh,
+            'curve_active': curve_active,
+            'curve_settemp': curve_base,
+            'trim': trim,
+            'off_temp': curve_off_temp,
+        },
     }
 
 
 __all__ = [
     'PERIODS', 'parse_hhmm', 'normalize_hhmm', 'is_time_in_range',
-    'is_now_in_windows', 'parse_thresholds', 'override_string', 'decide',
+    'is_now_in_windows', 'parse_thresholds', 'curve_settemp', 'override_string',
+    'decide',
 ]

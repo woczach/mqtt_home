@@ -37,7 +37,7 @@ frontend:
 
 **Runtime (hardcoded, from AGENTS.md):** MQTT = RabbitMQ MQTT plugin `192.168.0.230:11883`,
 InfluxDB 1.8 `192.168.0.230:8086` db `heat` user/pass `username`/`password`, ebusd bridge at
-`192.168.0.221:9999` (via ebusd container). Deployed via `infra/docker-compose.yml`.
+`192.168.0.231:9999` (via ebusd container; .221 was the old adapter address). Deployed via `infra/docker-compose.yml`.
 
 ---
 
@@ -177,7 +177,17 @@ section (overwrite on save). Fields:
   `max_sensor_age_s` (default 900 = 15 min),
   `fallback_mode` ∈ {`hold`, `safe`, `skip`} (see 3.4),
   `loop_interval_s` (120),
-  `room_priority` ("Jozef" — room whose diff table/override takes precedence, replacing hardcoded Jozef-vs-others logic)
+  `room_priority` ("Jozef" — room whose diff table/override takes precedence, replacing hardcoded Jozef-vs-others logic),
+  `curve_enabled` (bool, default `False`) — weather compensation on/off,
+  `curve` (JSON string `{"outdoor": settemp}`; default
+  `{"20":40,"15":40,"10":40,"5":40,"0":45,"-5":49,"-10":53,"-15":57,"-20":61}`,
+  linear interpolation, floored at `settemp_min`),
+  `curve_max_age_s` (3600) — outdoor reading older than this disables the curve,
+  `curve_trim_k` (3.0) / `curve_trim_max` (5.0) — room feedback may add at most
+  ±`curve_trim_max`, proportional to the mean room deficit,
+  `curve_off_temp` (15.0) — in curve-only fallback the boiler is enabled only below this outdoor temperature,
+  `outdoor_measurement` ("esp/sypialnia") / `outdoor_field` ("value") — Influx source of the
+  outdoor temperature. A room mapped to the same measurement is ignored (it is not a room).
 - `water` (DHW / hot water heating config — replaces hardcoded `WODA`/`WODAOFF` in `Heating_main`):
   `woda` (42.0) — hot water setpoint while a window is active,
   `woda_off` (0.0) — hot water setpoint otherwise (0 = off),
@@ -223,14 +233,16 @@ resumes within 10 s. Kill broker → watcher logs disconnect, reconnects on brok
 
 Pure logic in `libs/heating.py`:
 ```
-decide(schedule_for_now, rooms_config, latest_temps, controller_config) -> decision
+decide(schedule_for_now, rooms_config, latest_temps, controller_config,
+       water_config=None, now=None, outdoor=None) -> decision
 decision = {
   'rooms': {room: {'temp', 'age_s', 'setpoint', 'diff', 'valve': 'open'|'close',
                    'stale': bool, 'action': 'keep'|'open'|'close'}},
   'boiler': {'settemp': float, 'piec_off': 0|1, 'override': "0;..;..;..." },
   'water': {'active': bool, 'temp': float},   # active = now within a water_times window
   'fallback_active': bool, 'reason': str,
-  'valid_rooms': [...], 'stale_rooms': [...]
+  'valid_rooms': [...], 'stale_rooms': [...],
+  'outdoor': {'temp', 'age_s', 'fresh', 'curve_active', 'curve_settemp', 'trim', 'off_temp'}
 }
 ```
 Loop (`z2m_monitor.py`), every `loop_interval_s`:
@@ -239,6 +251,10 @@ Loop (`z2m_monitor.py`), every `loop_interval_s`:
 2. For each room fetch last temp from Influx (`SELECT value FROM <meas> ORDER BY time DESC LIMIT 1`).
    - `age_s` via `(now - t).total_seconds()` (fixes `.seconds` bug).
    - **No points at all** → treat as stale (age = ∞).
+   - A room whose `measurement` equals `outdoor_measurement` is always treated as stale
+     (one probe cannot be both the outdoor source and a room).
+   - Fetch the outdoor reading from `outdoor_measurement`/`outdoor_field` and pass it to
+     `decide(outdoor=...)`.
 3. Water window: `water.active = is_now_in_windows(water_times)` (empty list = always
    active). Boiler override uses `woda` when active, `woda_off` otherwise — replaces the
    hardcoded `WODA=42`/`WODAOFF=0` in `Heating_main`.
@@ -251,6 +267,10 @@ Loop (`z2m_monitor.py`), every `loop_interval_s`:
    - Default: `skip`.
 5. Boiler fallback: if NO valid room → do NOT change valve states; re-send last override
    or, if none, send `settemp_min` + `piec_off=0`; set `fallback_active` + reason.
+   With `curve_enabled` and a fresh outdoor reading, use the curve instead:
+   `settemp = curve(Tout)`, `piec_off=0` only when `Tout < curve_off_temp` (the TRVs keep
+   the rooms); with a fresh outdoor reading the curve replaces `podiff`/`jodiff` and the
+   rooms only trim it by at most `curve_trim_max`.
 6. Only publish valve messages for rooms whose desired state CHANGED (or config changed);
    re-publish the boiler override every loop (the boiler does not hold SetModeOverride indefinitely).
 7. Write each decision to Influx measurement `decisions` (fields: settemp, piec_off,
@@ -283,7 +303,9 @@ UI (single page, vanilla JS + fetch, no frameworks — keep image tiny):
   one Save); show validation errors inline; 0 = off.
 - Tab "Controller": form for valve_off_temp, valve_on_temp, settemp_min,
   diff tables (as small key/value lists), max_sensor_age_s, fallback_mode (select),
-  loop_interval_s, room_priority.
+  loop_interval_s, room_priority; weather compensation: curve_enabled, curve
+  (outdoor:settemp JSON), curve_max_age_s, curve_off_temp, curve_trim_k,
+  curve_trim_max, outdoor_measurement/outdoor_field.
 - Tab "Water": woda, woda_off + editable list of time windows (start/end HH:MM,
   add/remove rows, empty list = always on).
 - Tab "Rooms": per room: display name → measurement, value_name, zigbee address.
@@ -413,6 +435,6 @@ rewrite `ebusd-z2m-home/build.sh` (single command, flags, fail-fast) and create
 > ebusd-z2m-home/instructions.md FIRST — the instructions file is the plan and current
 > state of the refactor. Implement Task <X> from section 4, following section 3 design
 > and section 5 rules. Verify against the live services where possible (MQTT broker
-> 192.168.0.230:11883, Influx 8086 heat username/password, ebusd 192.168.0.221). Do not
+> 192.168.0.230:11883, Influx 8086 heat username/password, ebusd 192.168.0.231). Do not
 > modify files outside ebusd-z2m-home/ and infra/. Do not commit unless asked. Report
 > what you changed and how you verified it.

@@ -65,11 +65,25 @@ CONTROLLER_DEFAULTS = {
     'fallback_mode': 'skip',
     'loop_interval_s': 120.0,
     'room_priority': 'Jozef',
+    # Weather compensation: boiler flow temperature from the outdoor curve.
+    'curve_enabled': False,
+    # 21 + 2.3 * (21 - Tout)^(1/1.3), rounded, floored at settemp_min.
+    'curve': json.dumps({'20': 40, '15': 40, '10': 40, '5': 40, '0': 45,
+                         '-5': 49, '-10': 53, '-15': 57, '-20': 61},
+                        sort_keys=True),
+    'curve_max_age_s': 3600.0,
+    'curve_trim_k': 3.0,
+    'curve_trim_max': 5.0,
+    'curve_off_temp': 15.0,
+    'outdoor_measurement': 'esp/sypialnia',
+    'outdoor_field': 'value',
 }
 CONTROLLER_NUMERIC = {
     'valve_off_temp', 'valve_on_temp', 'settemp_min',
-    'max_sensor_age_s', 'loop_interval_s',
+    'max_sensor_age_s', 'loop_interval_s', 'curve_max_age_s',
+    'curve_trim_k', 'curve_trim_max', 'curve_off_temp',
 }
+CONTROLLER_TABLES = ('podiff', 'jodiff', 'curve')
 FALLBACK_MODES = ('hold', 'safe', 'skip')
 
 WATER_DEFAULTS = {
@@ -112,6 +126,20 @@ def _as_float(value):
     if not math.isfinite(number):
         raise ValueError(f'expected a finite number, got {value!r}')
     return number
+
+
+def _as_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in ('1', 'true', 'yes', 'on'):
+            return True
+        if lowered in ('0', 'false', 'no', 'off', ''):
+            return False
+    raise ValueError(f'expected a boolean, got {value!r}')
 
 
 def _allowed_fields(section):
@@ -164,8 +192,12 @@ def _normalize_section(section, values):
         for key, value in values.items():
             if key in CONTROLLER_NUMERIC:
                 result[key] = _as_float(value)
-            elif key in ('podiff', 'jodiff'):
+            elif key in CONTROLLER_TABLES:
                 result[key] = json.dumps(_loads(value), sort_keys=True)
+            elif key == 'curve_enabled':
+                result[key] = _as_bool(value)
+            elif key in ('outdoor_measurement', 'outdoor_field'):
+                result[key] = '' if value is None else str(value)
             else:
                 result[key] = value
         return result
@@ -221,11 +253,22 @@ def validate_section(section, values):
                 except (TypeError, ValueError):
                     errors.append(f'{key} must be a number, got {value!r}')
                     continue
-                if key in ('max_sensor_age_s', 'loop_interval_s') and number <= 0:
+                if key in ('max_sensor_age_s', 'loop_interval_s',
+                           'curve_max_age_s') and number <= 0:
                     errors.append(f'{key} must be greater than zero')
-                elif key not in ('max_sensor_age_s', 'loop_interval_s') and number < 0:
+                elif (key not in ('max_sensor_age_s', 'loop_interval_s',
+                                  'curve_max_age_s', 'curve_off_temp')
+                      and number < 0):
                     errors.append(f'{key} must not be negative')
-            elif key in ('podiff', 'jodiff'):
+            elif key == 'curve_enabled':
+                try:
+                    _as_bool(value)
+                except (TypeError, ValueError):
+                    errors.append(f'curve_enabled must be a boolean, got {value!r}')
+            elif key in ('outdoor_measurement', 'outdoor_field'):
+                if not isinstance(value, str) or not value.strip():
+                    errors.append(f'{key} must be a non-empty string')
+            elif key in CONTROLLER_TABLES:
                 try:
                     table = _loads(value)
                 except (TypeError, ValueError):
@@ -234,12 +277,20 @@ def validate_section(section, values):
                 if not isinstance(table, dict):
                     errors.append(f'{key} must be a JSON object of threshold:settemp')
                     continue
+                if key == 'curve' and len(table) < 2:
+                    errors.append('curve must contain at least two points')
                 for threshold, settemp in table.items():
                     try:
-                        _as_float(threshold)
-                        _as_float(settemp)
+                        threshold_value = _as_float(threshold)
+                        settemp_value = _as_float(settemp)
                     except (TypeError, ValueError):
                         errors.append(f'{key} contains invalid entry {threshold!r}: {settemp!r}')
+                        continue
+                    if key == 'curve':
+                        if not -40 <= threshold_value <= 40:
+                            errors.append(f'curve outside temperature {threshold!r} out of range')
+                        if not 20 <= settemp_value <= 80:
+                            errors.append(f'curve settemp {settemp!r} out of range')
             elif key == 'fallback_mode' and value not in FALLBACK_MODES:
                 errors.append(f'fallback_mode must be one of {FALLBACK_MODES}')
             elif key == 'room_priority' and value not in DEFAULT_ROOMS:

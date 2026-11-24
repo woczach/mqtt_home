@@ -22,7 +22,7 @@ connection = DEFAULT_CONNECTION
 BOILER_TOPICS = (
     'FlowTemp', 'FlowTempDesired', 'HwcTemp', 'HwcTempDesired',
     'StorageTemp', 'StorageTempDesired', 'WaterPressure', 'ReturnTemp',
-    'HeatingSwitch', 'HwcSwitch',
+    'HeatingSwitch', 'HwcSwitch', 'Flame', 'ModulationTempDesired',
 )
 
 
@@ -113,6 +113,8 @@ def api_status():
     max_age = _max_sensor_age(config)
 
     rooms = {}
+    controller = config['controller']
+    outdoor_measurement = str(controller.get('outdoor_measurement') or '').strip()
     for room, raw in config['rooms'].items():
         try:
             room_config = _loads(raw)
@@ -130,13 +132,33 @@ def api_status():
             'value': latest['value'],
             'time': latest['time'],
             'age_s': age,
-            'stale': age is None or age > max_age,
+            'stale': (age is None or age > max_age
+                      or (outdoor_measurement and measurement == outdoor_measurement)),
         }
 
     boiler = {}
     for name in BOILER_TOPICS:
         latest = _latest_measurement(f'ebusd/bai/{name}', 'value', now)
         boiler[name] = latest
+
+    outdoor_field = str(controller.get('outdoor_field') or 'value').strip()
+    try:
+        outdoor_max_age = float(controller.get('curve_max_age_s', 3600))
+    except (TypeError, ValueError):
+        outdoor_max_age = 3600.0
+    outdoor_latest = _latest_measurement(outdoor_measurement, outdoor_field, now) \
+        if outdoor_measurement else {'value': None, 'time': None, 'age_s': None}
+    outdoor = {
+        'measurement': outdoor_measurement,
+        'field': outdoor_field,
+        'value': outdoor_latest['value'],
+        'time': outdoor_latest['time'],
+        'age_s': outdoor_latest['age_s'],
+        'max_age_s': outdoor_max_age,
+        'enabled': bool(controller.get('curve_enabled')),
+        'fresh': (outdoor_latest['age_s'] is not None
+                  and outdoor_latest['age_s'] <= outdoor_max_age),
+    }
 
     try:
         last_decision = read_latest(DB_NAME, 'decisions', connection)
@@ -159,6 +181,7 @@ def api_status():
         'max_sensor_age_s': max_age,
         'rooms': rooms,
         'boiler': boiler,
+        'outdoor': outdoor,
         'water': water,
         'last_decision': last_decision,
     })

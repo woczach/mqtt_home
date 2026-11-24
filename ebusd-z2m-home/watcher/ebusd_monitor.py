@@ -37,6 +37,10 @@ topics = {
     "StorageTemp": 'floatColon',     # 42.44;ok
     "WaterPressure": 'floatColon',   # 0.956;ok
     "ReturnTemp": 'floatColon',      # 43.81;64834;ok
+    "Flame": 'onoff',                # on / off
+    "ModulationTempDesired": 'float',  # 50.0
+    "HcStarts": 'integer',           # burner starts, heating
+    "HwcStarts": 'integer',          # burner starts, DHW
 }
 
 _state_lock = threading.Lock()

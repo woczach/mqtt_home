@@ -20,6 +20,7 @@ BOILER_REPUBLISH_EVERY = 1
 DRY_RUN = os.environ.get('DRY_RUN', '').lower() in ('1', 'true', 'yes', 'on')
 
 _mqtt_client = None
+_ignored_outdoor_rooms = set()
 
 
 def get_mqtt_client():
@@ -44,6 +45,9 @@ def _room_config(raw):
 
 def fetch_temps(config):
     latest = {}
+    ignored = set()
+    outdoor_measurement = str(
+        config['controller'].get('outdoor_measurement') or '').strip()
     for room, raw in config['rooms'].items():
         try:
             room_config = _room_config(raw)
@@ -53,6 +57,11 @@ def fetch_temps(config):
             continue
         measurement = room_config.get('measurement')
         value_name = room_config.get('value_name', 'value')
+        if outdoor_measurement and measurement == outdoor_measurement:
+            # The same probe cannot be both the outdoor source and a room.
+            ignored.add(room)
+            latest[room] = {'value': None, 'age_s': None}
+            continue
         try:
             point = read_latest(DB_NAME, measurement, connection)
         except Exception:
@@ -66,7 +75,31 @@ def fetch_temps(config):
             'value': point.get(value_name),
             'age_s': age_seconds(point.get('time')),
         }
+    global _ignored_outdoor_rooms
+    for room in ignored - _ignored_outdoor_rooms:
+        log.warning('room %s uses the outdoor measurement %s; ignoring it',
+                    room, outdoor_measurement)
+    _ignored_outdoor_rooms = ignored
     return latest
+
+
+def fetch_outdoor(config):
+    controller = config['controller']
+    measurement = str(controller.get('outdoor_measurement') or '').strip()
+    value_name = str(controller.get('outdoor_field') or 'value').strip()
+    if not measurement:
+        return {'value': None, 'age_s': None}
+    try:
+        point = read_latest(DB_NAME, measurement, connection)
+    except Exception:
+        log.exception('could not read outdoor temperature from %s', measurement)
+        return {'value': None, 'age_s': None}
+    if not point:
+        return {'value': None, 'age_s': None}
+    return {
+        'value': point.get(value_name),
+        'age_s': age_seconds(point.get('time')),
+    }
 
 
 def _zigbee_address(rooms_config, room):
@@ -144,6 +177,16 @@ def decision_fields(decision, loop_number):
         'loop': int(loop_number),
         'dry_run': bool(DRY_RUN),
     }
+    outdoor = decision.get('outdoor') or {}
+    fields['curve_active'] = bool(outdoor.get('curve_active'))
+    if outdoor.get('temp') is not None:
+        fields['outdoor_temp'] = float(outdoor['temp'])
+    if outdoor.get('age_s') is not None:
+        fields['outdoor_age_s'] = float(outdoor['age_s'])
+    if outdoor.get('curve_settemp') is not None:
+        fields['curve_settemp'] = float(outdoor['curve_settemp'])
+    if outdoor.get('trim') is not None:
+        fields['curve_trim'] = float(outdoor['trim'])
     for room, entry in decision['rooms'].items():
         fields[f'{room}_setpoint'] = float(entry['setpoint'])
         fields[f'{room}_stale'] = bool(entry['stale'])
@@ -209,20 +252,27 @@ def main():
 
         try:
             latest_temps = fetch_temps(config)
+            outdoor = fetch_outdoor(config)
             schedule = schedule_for_now(config['schedule'])
             decision = decide(schedule, config['rooms'], latest_temps,
-                              config['controller'], config['water'])
+                              config['controller'], config['water'],
+                              outdoor=outdoor)
         except Exception:
             log.exception('could not compute decision; keeping previous decision')
             time.sleep(interval)
             continue
 
         loop_number += 1
-        log.info('period=%s settemp=%s piec_off=%s water=%s fallback=%s reason=%s',
+        log.info('period=%s settemp=%s piec_off=%s water=%s fallback=%s '
+                 'outdoor=%s curve=%s trim=%s reason=%s',
                  decision.get('period'), decision['boiler']['settemp'],
                  decision['boiler']['piec_off'],
                  'on' if decision['water']['active'] else 'off',
-                 decision['fallback_active'], decision['reason'])
+                 decision['fallback_active'],
+                 outdoor.get('value'),
+                 decision['outdoor'].get('curve_active'),
+                 decision['outdoor'].get('trim'),
+                 decision['reason'])
         for room, entry in decision['rooms'].items():
             log.info('  %s: temp=%s age=%s setpoint=%s diff=%s stale=%s action=%s',
                      room, entry['temp'], entry['age_s'], entry['setpoint'],

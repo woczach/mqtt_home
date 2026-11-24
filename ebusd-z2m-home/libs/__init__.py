@@ -15,7 +15,7 @@ __all__ = [
     'ConfigError', 'validate_section', 'read_section', 'load_config',
     'save_config', 'schedule_for_now', 'parse_hhmm', 'normalize_hhmm',
     'is_time_in_range', 'is_now_in_windows', 'parse_thresholds',
-    'override_string', 'decide', 'DB_NAME', 'DEFAULT_CONNECTION',
+    'curve_settemp', 'override_string', 'decide', 'DB_NAME', 'DEFAULT_CONNECTION',
     'connection', 'get_influx_client', 'push_to_db', 'read_from_db',
     'read_latest', 'parse_time', 'age_seconds',
     'measurments_preparation_sent', 'DEFAULT_BROKER', 'DEFAULT_PORT',
